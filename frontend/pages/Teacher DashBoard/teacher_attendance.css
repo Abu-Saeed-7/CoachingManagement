@@ -1,0 +1,173 @@
+/* ========================================================
+   TEACHER ATTENDANCE STYLES (teacher_attendance.css)
+   ======================================================== */
+
+.page_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.page_header h1 {
+    font-size: 22px;
+    color: #1f2937;
+}
+
+.page_header p {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* ATTENDANCE CONTROLS BAR */
+.attendance_controls {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 18px 20px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.control_group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 180px;
+}
+
+.control_group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.control_group select,
+.control_group input {
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    background-color: #ffffff;
+}
+
+/* ATTENDANCE TABLE */
+.attendance_card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.attendance_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f3f4f6;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.attendance_header h3 {
+    font-size: 16px;
+    color: #1f2937;
+}
+
+.quick_mark_all {
+    display: flex;
+    gap: 8px;
+}
+
+.btn_mark_all {
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.table_container {
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+.custom_table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    min-width: 550px;
+}
+
+.custom_table th {
+    background-color: #f9fafb;
+    color: #4b5563;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.custom_table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+/* TOGGLE RADIO BUTTONS (PRESENT / ABSENT) */
+.attendance_toggle {
+    display: flex;
+    gap: 8px;
+}
+
+.toggle_label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    transition: all 0.2s ease;
+}
+
+.toggle_label input[type="radio"] {
+    cursor: pointer;
+}
+
+.toggle_present:has(input:checked) {
+    background-color: #dcfce7;
+    border-color: #15803d;
+    color: #15803d;
+}
+
+.toggle_absent:has(input:checked) {
+    background-color: #fee2e2;
+    border-color: #dc2626;
+    color: #dc2626;
+}
+
+/* SAVE ATTENDANCE BAR */
+.save_bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #f3f4f6;
+}

@@ -1,0 +1,348 @@
+================================================================================
+           COACHING MANAGEMENT SYSTEM — BACKEND IMPLEMENTATION PLAN
+================================================================================
+Stack: PHP (Core/PDO) + MySQL + Apache (XAMPP) + REST API (JSON)
+Philosophy: "আগে বুঝব, তারপর ছোট করে বানাব, তারপর project-এ বসাব।"
+Frontend: HTML/CSS/JS (Already created, currently with static data)
+Goal: Step-by-step secure, scalable RESTful backend with role-based access.
+
+================================================================================
+[0] OVERALL LEARNING & EXECUTION FLOW
+================================================================================
+PHP Basics
+   ↓
+HTTP + JSON Basics
+   ↓
+XAMPP + Project Structure
+   ↓
+MySQL + Database Design (ERD)
+   ↓
+PHP ↔ MySQL (PDO + Prepared Statements)
+   ↓
+CRUD Operations (Core Skills)
+   ↓
+REST API Architecture & Endpoints
+   ↓
+Authentication (Password Hashing + Session/Token)
+   ↓
+Authorization & Role-Based Access Control (Admin, Teacher, Student)
+   ↓
+Module-by-Module APIs (Students, Teachers, Batches, Attendance, Exams, Fees)
+   ↓
+Frontend ↔ Backend Integration (fetch API, replace dummy data)
+   ↓
+Validation, Error Handling & Security Hardening
+   ↓
+Testing & Deployment
+
+================================================================================
+[1] RECOMMENDED BACKEND DIRECTORY STRUCTURE
+================================================================================
+backend/
+├── config/
+│   ├── database.php          # PDO connection & DB configurations
+│   └── constants.php         # App-wide constants & roles
+├── api/
+│   ├── auth/
+│   │   ├── login.php
+│   │   ├── logout.php
+│   │   └── me.php
+│   ├── students/
+│   │   ├── index.php         # List / Create students
+│   │   └── student.php       # Read / Update / Delete single student
+│   ├── teachers/
+│   ├── batches/
+│   ├── attendance/
+│   ├── exams/
+│   ├── results/
+│   ├── fees/
+│   └── dashboard/
+├── controllers/              # Business logic & request processing
+├── models/                   # Database queries & data interaction
+├── middleware/               # Auth check, role verification, CORS
+├── helpers/                  # JSON response helper, validator, sanitizer
+├── uploads/                  # User avatars, documents, attachments
+└── backend_plan.txt
+
+================================================================================
+[2] DATABASE DESIGN & CORE ENTITIES (10 TABLES)
+================================================================================
+1. users
+   - id (PK, INT AUTO_INCREMENT)
+   - email (VARCHAR, UNIQUE, NOT NULL)
+   - password (VARCHAR, Hashed with password_hash())
+   - role (ENUM: 'admin', 'teacher', 'student')
+   - status (ENUM: 'active', 'inactive')
+   - created_at, updated_at (TIMESTAMP)
+
+2. students
+   - id (PK, INT AUTO_INCREMENT)
+   - user_id (FK -> users.id, ON DELETE CASCADE)
+   - student_id_number (VARCHAR, UNIQUE)
+   - full_name (VARCHAR)
+   - phone (VARCHAR)
+   - guardian_phone (VARCHAR)
+   - address (TEXT)
+   - dob (DATE)
+   - created_at, updated_at
+
+3. teachers
+   - id (PK, INT AUTO_INCREMENT)
+   - user_id (FK -> users.id, ON DELETE CASCADE)
+   - teacher_id_number (VARCHAR, UNIQUE)
+   - full_name (VARCHAR)
+   - phone (VARCHAR)
+   - designation / subject_specialty (VARCHAR)
+   - salary (DECIMAL)
+   - created_at, updated_at
+
+4. batches
+   - id (PK, INT AUTO_INCREMENT)
+   - batch_name (VARCHAR)
+   - class_level (VARCHAR)
+   - schedule_time (VARCHAR)
+   - room_no (VARCHAR)
+   - created_at, updated_at
+
+5. subjects
+   - id (PK, INT AUTO_INCREMENT)
+   - subject_name (VARCHAR)
+   - subject_code (VARCHAR)
+
+6. enrollments (Student ↔ Batch Mapping)
+   - id (PK, INT AUTO_INCREMENT)
+   - student_id (FK -> students.id)
+   - batch_id (FK -> batches.id)
+   - enrollment_date (DATE)
+   - status (ENUM: 'active', 'completed', 'dropped')
+
+7. attendance
+   - id (PK, INT AUTO_INCREMENT)
+   - batch_id (FK -> batches.id)
+   - student_id (FK -> students.id)
+   - date (DATE)
+   - status (ENUM: 'present', 'absent', 'late')
+   - recorded_by (FK -> teachers.id or users.id)
+   - created_at
+
+8. exams
+   - id (PK, INT AUTO_INCREMENT)
+   - batch_id (FK -> batches.id)
+   - exam_title (VARCHAR)
+   - exam_date (DATE)
+   - total_marks (DECIMAL)
+
+9. results
+   - id (PK, INT AUTO_INCREMENT)
+   - exam_id (FK -> exams.id)
+   - student_id (FK -> students.id)
+   - marks_obtained (DECIMAL)
+   - grade (VARCHAR)
+   - remarks (TEXT)
+   - created_at
+
+10. fees
+    - id (PK, INT AUTO_INCREMENT)
+    - student_id (FK -> students.id)
+    - batch_id (FK -> batches.id)
+    - amount (DECIMAL)
+    - due_date (DATE)
+    - paid_date (DATE, NULLABLE)
+    - status (ENUM: 'paid', 'unpaid', 'partial')
+    - payment_method (VARCHAR)
+    - invoice_number (VARCHAR, UNIQUE)
+
+================================================================================
+[3] STEP-BY-STEP PHASE BREAKDOWN
+================================================================================
+
+--- Phase 1: PHP Fundamentals (Estimated: 3–5 Days) ---
+Goal: Read and write PHP code comfortably.
+Topics:
+  - Syntax, variables, data types, statements, comments.
+  - Control flow: if/else, switch, loops (for, while, foreach).
+  - Arrays: indexed, associative, multidimensional, array functions.
+  - Functions: parameters, return values, type declarations, scope.
+  - Forms: GET vs POST, $_GET, $_POST, $_SERVER, sanitization.
+  - Error handling: try/catch, exceptions, debugging.
+Mini Milestone:
+  - Create a simple student add form with validation and display submitted data.
+
+--- Phase 2: Web Backend Fundamentals (Estimated: 2–3 Days) ---
+Goal: Understand client-server communication.
+Topics:
+  - HTTP protocol: Request, response, headers, payload.
+  - HTTP methods: GET, POST, PUT, PATCH, DELETE.
+  - Status codes: 200 (OK), 201 (Created), 400 (Bad Request), 401 (Unauthorized),
+    403 (Forbidden), 404 (Not Found), 409 (Conflict), 422 (Unprocessable), 500 (Server Error).
+  - JSON: json_encode(), json_decode(), associative arrays to JSON.
+
+--- Phase 3: XAMPP & Environment Setup (Estimated: 1–2 Days) ---
+Goal: Setup and verify local development environment.
+Topics:
+  - Apache & MySQL service management in XAMPP.
+  - phpMyAdmin / MySQL Workbench for visual schema management.
+  - Setting up directory structure inside htdocs or local server.
+  - Base configuration files.
+
+--- Phase 4: MySQL Fundamentals (Estimated: 4–6 Days) ---
+Goal: Master relational database concepts and SQL queries.
+Topics:
+  - DDL: CREATE TABLE, ALTER TABLE, DROP TABLE, constraints (PK, FK, UNIQUE, NOT NULL).
+  - DML: INSERT, UPDATE, DELETE with WHERE conditions.
+  - DQL: SELECT, WHERE, ORDER BY, GROUP BY, HAVING, pagination (LIMIT/OFFSET).
+  - Joins: INNER JOIN, LEFT JOIN, combining related tables.
+  - Data design: Normalization basics, foreign key relationships, indexes.
+
+--- Phase 5: Coaching Management Schema & ERD (Estimated: 2–4 Days) ---
+Goal: Build the complete database schema for this project.
+Topics:
+  - Create the 10 core tables defined in Section [2].
+  - Set up foreign key constraints and cascade actions.
+  - Seed initial dummy data (admin account, sample teachers, batches, students).
+  - Test complex relational queries in phpMyAdmin/Workbench.
+
+--- Phase 6: PHP ↔ MySQL via PDO (Estimated: 1–2 Days) ---
+Goal: Secure, reliable database connection.
+Topics:
+  - Connect with PDO (PHP Data Objects).
+  - Set PDO error modes and default fetch modes (PDO::FETCH_ASSOC).
+  - Prepared statements with parameterized queries (:param or ?).
+  - Understanding SQL injection prevention.
+  - Transactions basics (beginTransaction, commit, rollBack).
+
+--- Phase 7: Core CRUD Implementation (Estimated: 4–7 Days) ---
+Goal: Implement full Create, Read, Update, Delete operations.
+Order:
+  1. Student CRUD (Add student, list students, edit details, delete student).
+  2. Teacher CRUD.
+  3. Batch CRUD.
+  4. Subject CRUD.
+Rule: Do not move to advanced APIs before CRUD is 100% stable.
+
+--- Phase 8: RESTful API Layer (Estimated: 3–5 Days) ---
+Goal: Clean API endpoints returning structured JSON.
+Standard Response Format:
+  {
+    "success": true,
+    "message": "Operation completed successfully",
+    "data": { ... }
+  }
+Standard Error Format:
+  {
+    "success": false,
+    "message": "Validation failed / Not found / Unauthorized",
+    "errors": [ ... ]
+  }
+Core Endpoints:
+  - POST   /api/auth/login
+  - POST   /api/auth/logout
+  - GET    /api/auth/me
+  - GET    /api/students          (List with pagination/filters)
+  - GET    /api/students/{id}     (Single student details)
+  - POST   /api/students          (Create student)
+  - PUT    /api/students/{id}     (Update student)
+  - DELETE /api/students/{id}     (Delete/Deactivate student)
+  - Testing: Test all endpoints with Postman before touching frontend.
+
+--- Phase 9: Authentication (Estimated: 3–5 Days) ---
+Goal: Secure login, session/token management, password security.
+Topics:
+  - Password hashing using password_hash($password, PASSWORD_BCRYPT).
+  - Password verification using password_verify().
+  - Session handling (session_start, $_SESSION) or Token-based auth.
+  - Protected API routes: Reject unauthenticated requests with 401.
+  - Rule: NEVER store plain-text passwords.
+
+--- Phase 10: Role-Based Access Control (RBAC) (Estimated: 2–4 Days) ---
+Goal: Strict server-side permission checks.
+Roles:
+  - Admin: Full read/write access across all modules.
+  - Teacher: View assigned batches, manage attendance, record marks for their students.
+  - Student: View personal attendance, exam results, pending/paid fees, profile.
+Rule:
+  - Frontend hiding buttons is NOT security.
+  - Backend must verify user role and resource ownership (e.g., student can only view student_id = me).
+
+--- Phase 11: Module-by-Module API Completion ---
+Modules:
+  1. Auth Module: login, logout, current user session info.
+  2. Students Module: Admin management + Student profile view.
+  3. Teachers Module: Admin management + Teacher profile view.
+  4. Batches & Subjects: Batch scheduling, student enrollment.
+  5. Attendance Module: Teacher submits attendance, Student views history.
+  6. Exams & Results: Exam creation, marks entry, Student report card.
+  7. Fees Module: Invoicing, payment status, Student fee receipts.
+  8. Dashboard Analytics: Summary counts, revenue, attendance averages.
+
+--- Phase 12: Frontend ↔ Backend Integration (Estimated: 4–7 Days) ---
+Goal: Connect HTML/CSS dashboard pages to the PHP REST API.
+Implementation:
+  - Use JavaScript fetch() with async/await.
+  - Replace static mock HTML rows with dynamically rendered data.
+  - Implement form submit listeners (e.preventDefault(), collect data, send POST/PUT).
+  - Display UI loaders, success alerts, and validation error messages.
+  - Redirect users based on role from loginPage.html to their respective dashboards.
+
+--- Phase 13: Validation & Error Handling (Estimated: 2–3 Days) ---
+Topics:
+  - Input validation: Required fields, email format, phone regex, numeric ranges.
+  - Duplicate check: Prevent duplicate emails, roll/id numbers.
+  - Centralized error response helper.
+  - Never expose internal database errors or stack traces to client.
+
+--- Phase 14: Security Hardening (Estimated: 3–5 Days) ---
+Checklist:
+  [ ] All SQL queries use Prepared Statements.
+  [ ] All passwords hashed using BCRYPT.
+  [ ] CORS headers configured properly.
+  [ ] Input sanitization and XSS prevention.
+  [ ] Sensitive credentials placed in separate config/env file (not committed to public repo).
+  [ ] Rate limiting on sensitive endpoints (e.g. login).
+
+--- Phase 15: Clean Architecture Refactoring ---
+Flow:
+  HTTP Request → Routing → Middleware (Auth/Role) → Controller → Model (DB) → JSON Response
+
+--- Phase 16: Comprehensive Testing (Estimated: 2–4 Days) ---
+Test Scenarios:
+  [ ] Postman test collection for all endpoints.
+  [ ] Valid request flow (Happy path).
+  [ ] Invalid request payload (400 / 422).
+  [ ] Unauthenticated request (401).
+  [ ] Unauthorized role request (403).
+  [ ] Non-existent resource (404).
+  [ ] End-to-end frontend integration testing.
+
+--- Phase 17: Deployment Preparation ---
+Topics:
+  - Turn off display_errors in production php.ini.
+  - Production database setup & migrations.
+  - Database backup and recovery procedures.
+  - Environment variable separation.
+
+================================================================================
+[4] FINAL PROJECT MILESTONES (TRACKER)
+================================================================================
+[ ] M1  — PHP Basics & Forms understood and implemented
+[ ] M2  — MySQL: Tables, relations, and complex queries written
+[ ] M3  — PDO Connection: PHP querying MySQL reliably
+[ ] M4  — CRUD: Student CRUD working completely
+[ ] M5  — REST API: Endpoints tested via Postman
+[ ] M6  — Auth: Secure login, logout, password hashing working
+[ ] M7  — Roles: Admin, Teacher, Student permissions enforced on backend
+[ ] M8  — Modules: Attendance, Exams, Results, Fees, Batches APIs complete
+[ ] M9  — Integration: Frontend displays live data from API
+[ ] M10 — Security: Prepared queries, validation, error protection complete
+[ ] M11 — Testing: Full user flow testing done across all roles
+[ ] M12 — Production: Config, backup, logging, and deployment ready
+
+================================================================================
+[5] WHAT YOU DO NOT NEED INITIALLY (AVOID DISTRACTIONS)
+================================================================================
+- Laravel: First learn Core PHP & PDO thoroughly.
+- Complex Design Patterns: Keep it straightforward until stable.
+- Microservices: Monolithic REST API is ideal for this project.
+- Docker: Local XAMPP/Apache is sufficient initially.
+- GraphQL: REST API is cleaner and simpler for this scope.
+================================================================================

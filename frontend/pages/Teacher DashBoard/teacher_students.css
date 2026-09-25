@@ -1,0 +1,119 @@
+/* ========================================================
+   TEACHER STUDENTS PAGE STYLES (teacher_students.css)
+   ======================================================== */
+
+.page_header {
+    margin-bottom: 20px;
+}
+
+.page_header h1 {
+    font-size: 22px;
+    color: #1f2937;
+}
+
+.page_header p {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* FILTER CONTROLS */
+.table_controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.search_input {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    background-color: #ffffff;
+}
+
+.filter_select {
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: #ffffff;
+    outline: none;
+}
+
+/* TABLE */
+.table_container {
+    background-color: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    overflow-x: auto;
+}
+
+.custom_table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    min-width: 650px;
+}
+
+.custom_table th {
+    background-color: #f9fafb;
+    color: #4b5563;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.custom_table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.badge {
+    background-color: #e0e7ff;
+    color: #4d38c4;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.att_rate {
+    font-weight: 600;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 12px;
+}
+
+.att_high {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.att_low {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.btn_action {
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    color: #374151;
+}
+
+.btn_action:hover {
+    background-color: #e5e7eb;
+}

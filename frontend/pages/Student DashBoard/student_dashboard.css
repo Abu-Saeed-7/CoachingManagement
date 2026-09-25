@@ -1,0 +1,380 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+    background-color: #fcfafa;
+    color: #1f2937;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* TOP NAVBAR */
+.top_navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #4d38c4;
+    padding: 12px 20px;
+    border-bottom: 1px solid #3b2aa1;
+    color: #ffffff;
+}
+
+.nav_left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.toggle_btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.system_title {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.nav_right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.nav_icon {
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.student_profile_btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    background-color: #ffffff;
+    color: #4d38c4;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* DASHBOARD CONTAINER */
+.dashboard_container {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 220px;
+    background-color: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    min-height: calc(100vh - 55px);
+    padding: 15px 0;
+    transition: all 0.3s ease;
+}
+
+.sidebar_menu {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sidebar_menu li a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: #4b5563;
+    text-decoration: none;
+    font-size: 14px;
+    transition: 0.2s ease;
+}
+
+.sidebar_menu li a:hover,
+.sidebar_menu li.active a {
+    background-color: #4d38c4;
+    color: #ffffff;
+    border-left: 3px solid #3b82f6;
+}
+
+.sidebar_menu li.logout {
+    margin-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* MAIN CONTENT */
+.main_content {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    padding: 24px;
+    background-color: #f0e9e9;
+}
+
+/* WELCOME CARD BANNER */
+.student_banner {
+    background: linear-gradient(135deg, #4d38c4 0%, #6d28d9 100%);
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    box-shadow: 0 4px 12px rgba(77, 56, 196, 0.2);
+}
+
+.banner_info h1 {
+    font-size: 22px;
+    margin-bottom: 6px;
+}
+
+.banner_info p {
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+.batch_tag {
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* STATS SUMMARY GRID */
+.stats_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.stat_card {
+    background-color: #ffffff;
+    padding: 18px 16px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid #e5e7eb;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease;
+}
+
+.stat_card:hover {
+    transform: translateY(-3px);
+}
+
+.card_icon {
+    font-size: 26px;
+    background-color: #f3f4f6;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.card_info h3 {
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.card_value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+}
+
+/* INFO SECTION */
+.info_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.info_card {
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.info_card_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 10px;
+}
+
+.info_card_header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.view_link {
+    font-size: 13px;
+    color: #4d38c4;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.info_list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.list_item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background-color: #f9fafb;
+    border-radius: 6px;
+    border: 1px solid #f3f4f6;
+}
+
+.item_title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge_success {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.badge_warning {
+    background-color: #fef3c7;
+    color: #b45309;
+}
+
+/* SIDEBAR COLLAPSED */
+.sidebar.collapsed {
+    width: 65px;
+}
+
+.sidebar.collapsed .sidebar_menu li a span {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar_menu li a {
+    justify-content: center;
+    padding: 12px 0;
+}
+
+/* MOBILE RESPONSIVE */
+@media (max-width: 768px) {
+    html, body {
+        overflow-x: hidden;
+        width: 100%;
+    }
+
+    .dashboard_container {
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    .top_navbar {
+        padding: 10px 12px;
+    }
+
+    .system_title {
+        font-size: 12px;
+    }
+
+    .student_name {
+        display: none;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: -240px;
+        top: 55px;
+        height: calc(100vh - 55px);
+        z-index: 1000;
+        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .sidebar.mobile_open {
+        left: 0;
+    }
+
+    .main_content {
+        padding: 12px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .stats_grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .stat_card {
+        padding: 10px 8px;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .card_icon {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+
+    .card_info h3 {
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .card_value {
+        font-size: 14px;
+    }
+
+    .info_grid {
+        grid-template-columns: 1fr;
+    }
+}

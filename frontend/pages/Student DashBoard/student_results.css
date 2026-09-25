@@ -1,0 +1,112 @@
+/* ========================================================
+   STUDENT RESULTS STYLES (student_results.css)
+   ======================================================== */
+
+.page_header {
+    margin-bottom: 20px;
+}
+
+.page_header h1 {
+    font-size: 22px;
+    color: #1f2937;
+}
+
+.page_header p {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* RESULTS STATS ROW */
+.results_stat_row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.res_stat_box {
+    background-color: #ffffff;
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.res_stat_box h4 {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.res_stat_box .number {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.results_table_card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.card_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.card_header h3 {
+    font-size: 16px;
+    color: #1f2937;
+}
+
+.table_container {
+    overflow-x: auto;
+}
+
+.custom_table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    min-width: 600px;
+}
+
+.custom_table th {
+    background-color: #f9fafb;
+    color: #4b5563;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.custom_table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.grade_badge {
+    background-color: #e0e7ff;
+    color: #4d38c4;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status_pass {
+    background-color: #dcfce7;
+    color: #15803d;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}

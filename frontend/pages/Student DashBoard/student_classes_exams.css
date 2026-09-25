@@ -1,0 +1,206 @@
+/* ========================================================
+   STUDENT CLASSES & EXAMS SCHEDULE STYLES (student_classes_exams.css)
+   ======================================================== */
+
+.page_header {
+    margin-bottom: 20px;
+}
+
+.page_header h1 {
+    font-size: 22px;
+    color: #1f2937;
+}
+
+.page_header p {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* FILTER & TABS BAR */
+.schedule_controls {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 16px 20px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.batch_filter_group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.batch_filter_group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.batch_select {
+    padding: 9px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    background-color: #ffffff;
+}
+
+.schedule_tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.tab_btn {
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #4b5563;
+    transition: all 0.2s ease;
+}
+
+.tab_btn.active,
+.tab_btn:hover {
+    background-color: #4d38c4;
+    color: #ffffff;
+    border-color: #4d38c4;
+}
+
+/* SCHEDULE SECTIONS GRID */
+.schedule_sections {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.section_card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.section_header h3 {
+    font-size: 16px;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* TIMETABLE / CLASS CARDS */
+.timetable_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.class_box {
+    background-color: #f9fafb;
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid #4d38c4;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.class_box.physics {
+    border-left-color: #0284c7;
+}
+
+.class_box.chemistry {
+    border-left-color: #059669;
+}
+
+.class_day {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+
+.class_subject {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.class_meta {
+    font-size: 13px;
+    color: #4b5563;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.time_tag {
+    font-weight: 600;
+    color: #4d38c4;
+}
+
+/* EXAM SCHEDULE TABLE */
+.table_container {
+    overflow-x: auto;
+}
+
+.custom_table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    min-width: 650px;
+}
+
+.custom_table th {
+    background-color: #f9fafb;
+    color: #4b5563;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.custom_table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge_batch {
+    background-color: #e0e7ff;
+    color: #4d38c4;
+}
+
+.badge_upcoming {
+    background-color: #fef3c7;
+    color: #b45309;
+}

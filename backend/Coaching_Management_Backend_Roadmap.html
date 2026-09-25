@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coaching Management — PHP Backend Roadmap</title>
+<style>
+:root{
+  --bg:#f5f7fb; --card:#fff; --text:#172033; --muted:#667085;
+  --line:#e4e7ec; --accent:#4f46e5; --accent2:#eef2ff;
+  --green:#087443; --greenbg:#ecfdf3; --orange:#b54708; --orangebg:#fffaeb;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65}
+.container{max-width:1100px;margin:auto;padding:32px 20px 70px}
+.hero{background:linear-gradient(135deg,#111827,#312e81);color:#fff;border-radius:22px;padding:38px;margin-bottom:28px}
+.hero h1{margin:0 0 10px;font-size:34px}
+.hero p{margin:6px 0;color:#dbe3ff}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.badge{padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.12);font-size:13px}
+.progress{height:10px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin:10px 0 28px}
+.progress span{display:block;width:0;height:100%;background:var(--accent)}
+.section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;margin:18px 0;box-shadow:0 4px 16px rgba(16,24,40,.04)}
+.section h2{margin:0 0 5px;font-size:23px}
+.section h3{margin:20px 0 7px;font-size:17px}
+.small{color:var(--muted);font-size:14px}
+.goal{background:var(--accent2);border-left:4px solid var(--accent);padding:12px 15px;border-radius:8px;margin:14px 0}
+ul{margin-top:7px}
+li{margin:4px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:12px;padding:15px}
+.card strong{display:block;margin-bottom:5px}
+.code{background:#101828;color:#e6edf3;padding:15px;border-radius:10px;overflow:auto;font:13px/1.6 Consolas,monospace}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:10px;text-align:left;vertical-align:top}
+th{background:#f9fafb}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;background:var(--greenbg);color:var(--green);font-size:12px;margin:2px}
+.warn{background:var(--orangebg);color:#7a2e0b;border-left:4px solid #f79009;padding:12px 15px;border-radius:8px}
+.checklist{list-style:none;padding-left:0}
+.checklist li:before{content:"☐ ";font-weight:bold}
+.final{background:#111827;color:#fff}
+.final .small{color:#cbd5e1}
+@media(max-width:650px){.hero h1{font-size:27px}.container{padding:18px 12px 50px}.section{padding:18px}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<section class="hero">
+  <h1>Coaching Management — Backend Roadmap</h1>
+  <p>PHP + MySQL + REST API + Authentication + Frontend Integration</p>
+  <p class="small">Goal: frontend AI দিয়ে তৈরি থাকবে; backend তুমি শিখে step-by-step নিজে implement করবে।</p>
+  <div class="badges">
+    <span class="badge">PHP</span><span class="badge">XAMPP</span><span class="badge">MySQL</span>
+    <span class="badge">REST API</span><span class="badge">JSON</span><span class="badge">Security</span>
+  </div>
+</section>
+
+<section class="section">
+  <h2>0. Overall Learning Strategy</h2>
+  <div class="goal"><b>Rule:</b> শুধু tutorial দেখে এগোবে না। প্রতিটি segment-এর concept শেখার পর Coaching Management project-এ সেটি implement করবে।</div>
+  <div class="code">PHP Basics
+   ↓
+XAMPP + Project Structure
+   ↓
+MySQL + Database Design
+   ↓
+PHP ↔ MySQL
+   ↓
+CRUD
+   ↓
+HTTP + REST API + JSON
+   ↓
+Authentication + Authorization
+   ↓
+Role-based APIs
+   ↓
+Frontend ↔ API Integration
+   ↓
+Validation + Security
+   ↓
+Testing + Deployment</div>
+</section>
+
+<section class="section">
+<h2>1. PHP Fundamentals</h2>
+<p class="small">সময়: প্রায় 3–5 দিন | লক্ষ্য: PHP code পড়তে ও লিখতে পারা।</p>
+<h3>1.1 Basic Syntax</h3>
+<ul><li><code>&lt;?php ?&gt;</code>, statements, comments</li><li>variables, constants, data types</li><li>strings, numbers, booleans, null</li></ul>
+<h3>1.2 Control Flow</h3>
+<ul><li>if / elseif / else</li><li>switch</li><li>for, while, foreach</li><li>break / continue</li></ul>
+<h3>1.3 Arrays</h3>
+<ul><li>indexed arrays</li><li>associative arrays</li><li>multidimensional arrays</li><li>array functions</li></ul>
+<h3>1.4 Functions</h3>
+<ul><li>parameters, return values</li><li>type declarations</li><li>scope</li></ul>
+<h3>1.5 Forms & Requests</h3>
+<ul><li>GET vs POST</li><li><code>$_GET</code>, <code>$_POST</code>, <code>$_SERVER</code></li><li>form validation basics</li></ul>
+<h3>1.6 Error Handling</h3>
+<ul><li>errors vs exceptions</li><li><code>try/catch</code></li><li>basic debugging</li></ul>
+<div class="goal"><b>Mini Project:</b> PHP দিয়ে Student Add Form → submitted data validate → একটি PHP page-এ result দেখাও।</div>
+</section>
+
+<section class="section">
+<h2>2. Web Backend Fundamentals</h2>
+<p class="small">সময়: 2–3 দিন | PHP কেন browser-এর সাথে কীভাবে কাজ করে সেটা বুঝবে।</p>
+<div class="grid">
+<div class="card"><strong>HTTP</strong>Request, response, status code, headers</div>
+<div class="card"><strong>Methods</strong>GET, POST, PUT, PATCH, DELETE</div>
+<div class="card"><strong>Status Codes</strong>200, 201, 400, 401, 403, 404, 409, 422, 500</div>
+<div class="card"><strong>JSON</strong>Object, array, encode/decode</div>
+</div>
+<div class="goal"><b>Must understand:</b> browser/frontend আর backend-এর মধ্যে data আদান-প্রদান HTTP request/response দিয়ে হয়।</div>
+</section>
+
+<section class="section">
+<h2>3. XAMPP & Local Development Environment</h2>
+<p class="small">সময়: 1–2 দিন</p>
+<h3>3.1 Understand the Stack</h3>
+<ul><li>Apache — PHP request serve করবে</li><li>PHP — backend logic</li><li>MySQL — database</li><li>phpMyAdmin — database management UI</li><li>MySQL Workbench — database design/query work</li></ul>
+<h3>3.2 Project Structure</h3>
+<div class="code">htdocs/
+└── coaching-management/
+    ├── public/
+    ├── api/
+    ├── config/
+    ├── controllers/
+    ├── models/
+    ├── middleware/
+    ├── helpers/
+    └── uploads/</div>
+<p class="small">শুরুতে simple structure দিয়ে কাজ করবে; project বড় হলে separation আরও clean করবে।</p>
+</section>
+
+<section class="section">
+<h2>4. MySQL Fundamentals</h2>
+<p class="small">সময়: 4–6 দিন | এই অংশটি খুব গুরুত্বপূর্ণ।</p>
+<h3>4.1 Database Concepts</h3>
+<ul><li>database, table, row, column</li><li>primary key</li><li>foreign key</li><li>unique key</li><li>NULL / NOT NULL</li><li>default values</li></ul>
+<h3>4.2 SQL Commands</h3>
+<div class="grid">
+<div class="card"><strong>DDL</strong>CREATE, ALTER, DROP</div>
+<div class="card"><strong>DML</strong>INSERT, UPDATE, DELETE</div>
+<div class="card"><strong>DQL</strong>SELECT, WHERE, ORDER BY, GROUP BY</div>
+<div class="card"><strong>Joins</strong>INNER, LEFT, relationship-based queries</div>
+</div>
+<h3>4.3 Data Design</h3>
+<ul><li>normalization basics</li><li>one-to-one, one-to-many, many-to-many</li><li>indexes</li><li>timestamps</li></ul>
+<div class="goal"><b>Practice:</b> আগে আলাদা ছোট database বানিয়ে SQL practice করবে—তারপর main project database design করবে।</div>
+</section>
+
+<section class="section">
+<h2>5. Coaching Management Database Design</h2>
+<p class="small">সময়: 2–4 দিন | এখন তোমার actual project-এর data model তৈরি হবে।</p>
+<h3>5.1 Core Entities</h3>
+<div class="grid">
+<div class="card"><strong>users</strong>Login identity + role</div>
+<div class="card"><strong>students</strong>Student-specific information</div>
+<div class="card"><strong>teachers</strong>Teacher-specific information</div>
+<div class="card"><strong>batches</strong>Batch/class information</div>
+<div class="card"><strong>subjects</strong>Subjects</div>
+<div class="card"><strong>enrollments</strong>Student ↔ Batch relation</div>
+<div class="card"><strong>attendance</strong>Student attendance records</div>
+<div class="card"><strong>exams</strong>Exam information</div>
+<div class="card"><strong>results</strong>Marks/results</div>
+<div class="card"><strong>fees</strong>Payment/fee records</div>
+</div>
+<h3>5.2 Relationships</h3>
+<ul><li>User → role</li><li>Student → enrollments → Batch</li><li>Teacher → Batch/Subject</li><li>Batch → Students</li><li>Exam → Results → Student</li><li>Student → Attendance records</li><li>Student → Fees</li></ul>
+<div class="warn"><b>Important:</b> table বানানোর আগে ERD/relationship বুঝে নেবে। পরে database change করা যাবে, কিন্তু শুরুতে ভালো design করলে অনেক ঝামেলা বাঁচবে।</div>
+</section>
+
+<section class="section">
+<h2>6. PHP ↔ MySQL Connection</h2>
+<p class="small">সময়: 1–2 দিন</p>
+<h3>শিখবে</h3>
+<ul><li>PDO</li><li>database configuration</li><li>connection errors</li><li>prepared statements</li><li>transactions-এর basic ধারণা</li></ul>
+<div class="goal"><b>Implementation:</b> PHP দিয়ে MySQL-এ connect → একটি table থেকে data SELECT → PHP-তে receive → response তৈরি।</div>
+</section>
+
+<section class="section">
+<h2>7. CRUD — Backend-এর Core Skill</h2>
+<p class="small">সময়: 4–7 দিন | CRUD ভালোভাবে না শিখে API-তে যেও না।</p>
+<table>
+<tr><th>Operation</th><th>Meaning</th><th>Project Example</th></tr>
+<tr><td>Create</td><td>নতুন data</td><td>Add Student</td></tr>
+<tr><td>Read</td><td>data দেখা</td><td>Student List</td></tr>
+<tr><td>Update</td><td>data পরিবর্তন</td><td>Edit Student</td></tr>
+<tr><td>Delete</td><td>data remove</td><td>Delete Student</td></tr>
+</table>
+<h3>Practice Order</h3>
+<ol><li>Student CRUD</li><li>Teacher CRUD</li><li>Batch CRUD</li><li>Subject CRUD</li></ol>
+<div class="goal"><b>Milestone:</b> Admin যেন backend-এর মাধ্যমে student/teacher/batch data create, read, update, delete করতে পারে।</div>
+</section>
+
+<section class="section">
+<h2>8. REST API</h2>
+<p class="small">সময়: 3–5 দিন | এখন frontend-এর সাথে clean communication layer তৈরি হবে।</p>
+<h3>8.1 API Concepts</h3>
+<ul><li>REST কী এবং কেন</li><li>resource-based URL</li><li>HTTP methods</li><li>request body</li><li>query parameters</li><li>path parameters</li><li>headers</li><li>JSON request/response</li></ul>
+<h3>8.2 Example Endpoints</h3>
+<div class="code">GET    /api/students
+GET    /api/students/15
+POST   /api/students
+PUT    /api/students/15
+DELETE /api/students/15
+
+POST   /api/auth/login
+POST   /api/auth/logout
+GET    /api/auth/me</div>
+<h3>8.3 Consistent Response Format</h3>
+<div class="code">{
+  "success": true,
+  "message": "Student created successfully",
+  "data": { ... }
+}</div>
+<div class="goal"><b>Tools:</b> Postman বা অন্য API client দিয়ে frontend connect করার আগে API independently test করবে।</div>
+</section>
+
+<section class="section">
+<h2>9. Authentication</h2>
+<p class="small">সময়: 3–5 দিন | Login system-এর foundation।</p>
+<h3>9.1 Learn</h3>
+<ul><li>password hashing</li><li>password verification</li><li>sessions বনাম token-based authentication</li><li>login/logout flow</li><li>authentication state</li></ul>
+<h3>9.2 Project Flow</h3>
+<div class="code">Login Request
+   ↓
+Validate input
+   ↓
+Find user
+   ↓
+Verify hashed password
+   ↓
+Create authenticated state
+   ↓
+Return safe user information
+   ↓
+Frontend opens correct dashboard</div>
+<div class="warn"><b>Never:</b> plain-text password database-এ রাখবে না। Password hash করবে এবং SQL query-তে prepared statements ব্যবহার করবে।</div>
+</section>
+
+<section class="section">
+<h2>10. Authorization & Role-Based Access</h2>
+<p class="small">সময়: 2–4 দিন</p>
+<h3>Roles</h3>
+<div class="grid">
+<div class="card"><strong>Admin</strong>Full management access</div>
+<div class="card"><strong>Teacher</strong>Assigned academic operations</div>
+<div class="card"><strong>Student</strong>Own profile, attendance, result, fees etc.</div>
+</div>
+<h3>Learn</h3>
+<ul><li>Authentication vs Authorization</li><li>role checking</li><li>resource ownership</li><li>middleware concept</li></ul>
+<div class="goal"><b>Example:</b> Student যেন অন্য student-এর result API দিয়ে দেখতে না পারে—শুধু frontend button hide করলেই হবে না; backend-এও permission enforce করতে হবে।</div>
+</section>
+
+<section class="section">
+<h2>11. Build the API Layer — Module by Module</h2>
+<p class="small">প্রতিটি module-এ একই pattern follow করবে: Route → Validate → Authorize → Database → Response.</p>
+<table>
+<tr><th>Module</th><th>Implementation</th></tr>
+<tr><td>Auth</td><td>Login, logout, current user</td></tr>
+<tr><td>Students</td><td>Admin CRUD + student profile</td></tr>
+<tr><td>Teachers</td><td>Admin CRUD + teacher profile</td></tr>
+<tr><td>Batches</td><td>Create/update/delete + assignments</td></tr>
+<tr><td>Attendance</td><td>Teacher records + student views</td></tr>
+<tr><td>Exams</td><td>Create/manage exams</td></tr>
+<tr><td>Results</td><td>Enter/update marks + student view</td></tr>
+<tr><td>Fees</td><td>Fee records + payment status</td></tr>
+<tr><td>Dashboard</td><td>Counts, summaries, recent activity</td></tr>
+</table>
+</section>
+
+<section class="section">
+<h2>12. Frontend ↔ Backend Integration</h2>
+<p class="small">সময়: 4–7 দিন | এখন AI-generated frontend-এর static data বাস্তব data দিয়ে replace হবে।</p>
+<h3>12.1 JavaScript API Calls</h3>
+<ul><li>fetch()</li><li>GET/POST/PUT/DELETE request</li><li>JSON parse</li><li>loading state</li><li>success/error state</li></ul>
+<h3>12.2 Replace Dummy Data</h3>
+<div class="code">Static Student Data
+      ↓ replace
+fetch("/api/students")
+      ↓
+PHP API
+      ↓
+MySQL
+      ↓
+JSON
+      ↓
+Frontend Table</div>
+<h3>12.3 Forms</h3>
+<ul><li>frontend validation</li><li>backend validation</li><li>submit → API → database</li><li>success message</li><li>error message</li></ul>
+</section>
+
+<section class="section">
+<h2>13. Validation & Error Handling</h2>
+<p class="small">সময়: 2–3 দিন</p>
+<h3>Validation</h3>
+<ul><li>required fields</li><li>email format</li><li>number/range validation</li><li>duplicate data</li><li>allowed values</li><li>server-side validation</li></ul>
+<h3>Error Design</h3>
+<ul><li>meaningful HTTP status codes</li><li>consistent JSON errors</li><li>do not expose database/internal secrets</li><li>centralized error handling</li></ul>
+</section>
+
+<section class="section">
+<h2>14. Security Essentials</h2>
+<p class="small">সময়: 3–5 দিন | Production-এর আগে অবশ্যই।</p>
+<div class="grid">
+<div class="card"><strong>SQL Injection</strong>Prepared statements</div>
+<div class="card"><strong>Password Security</strong>Hashing + verification</div>
+<div class="card"><strong>Access Control</strong>Server-side authorization</div>
+<div class="card"><strong>Input Security</strong>Validate + sanitize appropriately</div>
+<div class="card"><strong>CORS</strong>Understand when/why it is needed</div>
+<div class="card"><strong>Secrets</strong>DB credentials/config বাইরে রাখা</div>
+<div class="card"><strong>HTTPS</strong>Production traffic encryption</div>
+<div class="card"><strong>Rate Limiting</strong>Protect sensitive endpoints</div>
+</div>
+</section>
+
+<section class="section">
+<h2>15. Better Backend Architecture</h2>
+<p class="small">CRUD/API কাজ করার পর code organize করবে। শুরুতেই unnecessary complexity নয়।</p>
+<h3>Concepts</h3>
+<ul><li>separation of concerns</li><li>routes/endpoints</li><li>controllers</li><li>models/data access</li><li>services/business logic</li><li>middleware</li><li>helpers</li><li>config</li></ul>
+<div class="code">Request
+  ↓
+Route
+  ↓
+Middleware / Auth
+  ↓
+Controller
+  ↓
+Service / Business Logic
+  ↓
+Model / Database
+  ↓
+JSON Response</div>
+</section>
+
+<section class="section">
+<h2>16. Testing & Debugging</h2>
+<p class="small">সময়: 2–4 দিন</p>
+<ul class="checklist">
+<li>প্রতিটি API Postman দিয়ে test</li>
+<li>valid request test</li>
+<li>invalid request test</li>
+<li>unauthorized request test</li>
+<li>wrong role test</li>
+<li>missing data test</li>
+<li>duplicate data test</li>
+<li>database constraint test</li>
+<li>frontend integration test</li>
+<li>mobile/desktop flow test</li>
+</ul>
+</section>
+
+<section class="section">
+<h2>17. Deployment Preparation</h2>
+<p class="small">Local project stable হওয়ার পর।</p>
+<h3>Learn</h3>
+<ul><li>production PHP configuration</li><li>production MySQL database</li><li>environment/config variables</li><li>domain & HTTPS basics</li><li>database backup/restore</li><li>logging</li><li>error display off in production</li></ul>
+<div class="warn"><b>Rule:</b> local XAMPP setup আর production server একই জিনিস নয়। Deploy করার আগে production environment অনুযায়ী configuration আলাদা করতে হবে।</div>
+</section>
+
+<section class="section">
+<h2>18. Final Project Milestones</h2>
+<table>
+<tr><th>Milestone</th><th>Done When...</th></tr>
+<tr><td>M1 — PHP</td><td>PHP basics + forms বুঝতে পারো</td></tr>
+<tr><td>M2 — MySQL</td><td>নিজে table, relation, SQL query লিখতে পারো</td></tr>
+<tr><td>M3 — Connection</td><td>PHP থেকে database query করতে পারো</td></tr>
+<tr><td>M4 — CRUD</td><td>Student CRUD সম্পূর্ণ</td></tr>
+<tr><td>M5 — REST API</td><td>CRUD API Postman দিয়ে কাজ করে</td></tr>
+<tr><td>M6 — Auth</td><td>Secure login/logout কাজ করে</td></tr>
+<tr><td>M7 — Roles</td><td>Admin/Teacher/Student permission কাজ করে</td></tr>
+<tr><td>M8 — Modules</td><td>Attendance, Result, Fees, Batch ইত্যাদি API complete</td></tr>
+<tr><td>M9 — Integration</td><td>Frontend dummy data বাদ দিয়ে API data ব্যবহার করে</td></tr>
+<tr><td>M10 — Security</td><td>Validation, authorization, prepared queries ইত্যাদি complete</td></tr>
+<tr><td>M11 — Testing</td><td>Main user flows tested</td></tr>
+<tr><td>M12 — Production</td><td>Backup, config, HTTPS, logging সহ deploy-ready</td></tr>
+</table>
+</section>
+
+<section class="section final">
+<h2>Recommended Order — একদম এই sequence follow করো</h2>
+<ol>
+<li>PHP Fundamentals</li>
+<li>HTTP + JSON Basics</li>
+<li>XAMPP + Project Structure</li>
+<li>MySQL Fundamentals</li>
+<li>Coaching Management ERD + Database</li>
+<li>PHP + MySQL with PDO</li>
+<li>CRUD</li>
+<li>REST API</li>
+<li>Authentication</li>
+<li>Authorization + Roles</li>
+<li>Students / Teachers / Batches APIs</li>
+<li>Attendance / Exams / Results / Fees APIs</li>
+<li>Dashboard APIs</li>
+<li>Frontend Integration</li>
+<li>Validation + Error Handling</li>
+<li>Security</li>
+<li>Testing</li>
+<li>Deployment</li>
+</ol>
+<p class="small"><b>Target:</b> প্রতিটি ধাপ আগে শেখা → ছোট practice → Coaching Management-এ implement → test → তারপর next step.</p>
+</section>
+
+<section class="section">
+<h2>What You Do NOT Need Initially</h2>
+<ul>
+<li>Laravel — শুরুতে দরকার নেই; core PHP বুঝে পরে চাইলে শিখবে</li>
+<li>Complex design patterns — project stable হওয়ার পর</li>
+<li>Microservices — এই project-এর জন্য unnecessary</li>
+<li>Docker — শুরুতে দরকার নেই</li>
+<li>GraphQL — REST API যথেষ্ট</li>
+<li>Advanced DevOps — deployment stage-এ প্রয়োজন অনুযায়ী</li>
+</ul>
+<div class="goal"><b>Best learning philosophy:</b> “আগে বুঝব, তারপর ছোট করে বানাব, তারপর project-এ বসাব।” AI code লিখে দিতে পারবে, কিন্তু backend-এর logic, database relationship, API flow এবং security তোমাকে বুঝতেই হবে।</div>
+</section>
+
+</div>
+</body>
+</html>
