@@ -1,3 +1,59 @@
+<?php
+require_once __DIR__ . '/../../../backend/config/database.php';
+
+$message = '';
+$messageType = 'success';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = trim($_POST['name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $subjectId = (int) ($_POST['subject_id'] ?? 0);
+    $phone = trim($_POST['phone'] ?? '');
+    $gender = $_POST['gender'] ?? '';
+    $address = trim($_POST['address'] ?? '');
+    $joiningDate = $_POST['joining_date'] ?? '';
+
+    if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8 ||
+        $subjectId < 1 || $phone === '' || !in_array($gender, ['male', 'female', 'other'], true) || $joiningDate === '') {
+        $message = 'Please provide valid values. Password must contain at least 8 characters.';
+        $messageType = 'error';
+    } else {
+        try {
+            $db->beginTransaction();
+
+            $userStatement = $db->prepare(
+                'INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, \'teacher\', \'active\')'
+            );
+            $userStatement->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT)]);
+
+            $teacherStatement = $db->prepare(
+                'INSERT INTO teachers (user_id, subject_id, phone, gender, address, joining_date) VALUES (?, ?, ?, ?, ?, ?)'
+            );
+            $teacherStatement->execute([$db->lastInsertId(), $subjectId, $phone, $gender, $address ?: null, $joiningDate]);
+
+            $db->commit();
+            $message = 'Teacher added successfully.';
+        } catch (PDOException $error) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            $message = $error->errorInfo[1] === 1062 ? 'This email is already registered.' : 'Unable to add teacher.';
+            $messageType = 'error';
+        }
+    }
+}
+
+$subjects = $db->query("SELECT id, name FROM subjects WHERE status = 'active' ORDER BY name")->fetchAll();
+
+$teachers = $db->query(
+    'SELECT teachers.id, users.name, users.email, subjects.name AS subject_name, teachers.phone, teachers.gender, teachers.joining_date
+     FROM teachers
+     INNER JOIN users ON users.id = teachers.user_id
+     LEFT JOIN subjects ON subjects.id = teachers.subject_id
+     ORDER BY teachers.id DESC'
+)->fetchAll();
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -67,6 +123,10 @@
             </div>
 
             <!-- টিচার টেবিল -->
+            <?php if ($message !== ''): ?>
+                <p class="form_message <?= $messageType; ?>"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></p>
+            <?php endif; ?>
+
             <div class="table_container">
                 <table class="custom_table">
                     <thead>
@@ -81,42 +141,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>#T01</td>
-                            <td><strong>Prof. Abdul Karim</strong></td>
-                            <td><span class="subject_badge">Mathematics</span></td>
-                            <td>karim.teacher@gmail.com</td>
-                            <td>01711-223344</td>
-                            <td>Batch A, Batch B</td>
-                            <td>
-                                <button class="btn_icon edit_btn" title="Edit">✏️</button>
-                                <button class="btn_icon delete_btn" title="Delete">🗑️</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#T02</td>
-                            <td><strong>Dr. Nusrat Jahan</strong></td>
-                            <td><span class="subject_badge">Physics</span></td>
-                            <td>nusrat.phy@gmail.com</td>
-                            <td>01822-556677</td>
-                            <td>Batch A</td>
-                            <td>
-                                <button class="btn_icon edit_btn" title="Edit">✏️</button>
-                                <button class="btn_icon delete_btn" title="Delete">🗑️</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#T03</td>
-                            <td><strong>Mohammad Ali</strong></td>
-                            <td><span class="subject_badge">Chemistry</span></td>
-                            <td>ali.chem@gmail.com</td>
-                            <td>01933-889900</td>
-                            <td>Batch B, Batch C</td>
-                            <td>
-                                <button class="btn_icon edit_btn" title="Edit">✏️</button>
-                                <button class="btn_icon delete_btn" title="Delete">🗑️</button>
-                            </td>
-                        </tr>
+                        <?php foreach ($teachers as $teacher): ?>
+                            <tr>
+                                <td>#T<?= (int) $teacher['id']; ?></td>
+                                <td><strong><?= htmlspecialchars($teacher['name'], ENT_QUOTES, 'UTF-8'); ?></strong></td>
+                                <td><?= htmlspecialchars($teacher['subject_name'] ?? 'Not assigned', ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?= htmlspecialchars($teacher['email'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?= htmlspecialchars($teacher['phone'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td>Not assigned</td>
+                                <td>
+                                    <button class="btn_icon edit_btn" title="Edit" type="button">✏️</button>
+                                    <button class="btn_icon delete_btn" title="Delete" type="button">🗑️</button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
@@ -130,36 +168,48 @@
                 <h3>Add New Teacher</h3>
                 <button class="close_modal" id="closeModal">&times;</button>
             </div>
-            <form class="modal_form">
+            <form class="modal_form" method="post">
                 <div class="form_group">
                     <label>Full Name</label>
-                    <input type="text" placeholder="e.g. Prof. Abdul Karim" required>
+                    <input type="text" name="name" placeholder="e.g. Prof. Abdul Karim" required>
                 </div>
                 <div class="form_group">
                     <label>Subject Specialization</label>
-                    <select required>
+                    <select name="subject_id" required>
                         <option value="">Select primary subject</option>
-                        <option value="Mathematics">Mathematics</option>
-                        <option value="Physics">Physics</option>
-                        <option value="Chemistry">Chemistry</option>
-                        <option value="English">English</option>
+                        <?php foreach ($subjects as $subject): ?>
+                            <option value="<?= (int) $subject['id']; ?>"><?= htmlspecialchars($subject['name'], ENT_QUOTES, 'UTF-8'); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form_group">
+                    <label>Gender</label>
+                    <select name="gender" required>
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
                     </select>
                 </div>
                 <div class="form_group">
                     <label>Email Address</label>
-                    <input type="email" placeholder="teacher@example.com" required>
+                    <input type="email" name="email" placeholder="teacher@example.com" required>
                 </div>
                 <div class="form_group">
                     <label>Phone Number</label>
-                    <input type="tel" placeholder="017XXXXXXXX" required>
+                    <input type="tel" name="phone" placeholder="017XXXXXXXX" required>
                 </div>
                 <div class="form_group">
-                    <label>Assign Batches</label>
-                    <input type="text" placeholder="e.g. Batch A, Batch B">
+                    <label>Address</label>
+                    <input type="text" name="address" placeholder="Teacher address">
+                </div>
+                <div class="form_group">
+                    <label>Joining Date</label>
+                    <input type="date" name="joining_date" required>
                 </div>
                 <div class="form_group">
                     <label>Password</label>
-                    <input type="password" placeholder="Create login password" required>
+                    <input type="password" name="password" placeholder="At least 8 characters" minlength="8" required>
                 </div>
                 <div class="modal_buttons">
                     <button type="button" class="btn_cancel" id="cancelModal">Cancel</button>

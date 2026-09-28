@@ -1,3 +1,71 @@
+<?php
+require_once __DIR__ . '/../../../backend/config/database.php';
+
+$message = '';
+$messageType = 'success';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = trim($_POST['name'] ?? '');
+    $startDate = $_POST['start_date'] ?? '';
+    $status = $_POST['status'] ?? '';
+    $teacherId = (int) ($_POST['teacher_id'] ?? 0);
+
+    if ($name === '' || $startDate === '' || !in_array($status, ['active', 'inactive', 'completed'], true)) {
+        $message = 'Please provide a batch name, start date, and valid status.';
+        $messageType = 'error';
+    } else {
+        try {
+            $db->beginTransaction();
+
+            $batchStatement = $db->prepare(
+                'INSERT INTO batches (name, start_date, status) VALUES (?, ?, ?)'
+            );
+            $batchStatement->execute([$name, $startDate, $status]);
+
+            if ($teacherId > 0) {
+                $teacherStatement = $db->prepare(
+                    'INSERT INTO batch_teachers (batch_id, teacher_id) VALUES (?, ?)'
+                );
+                $teacherStatement->execute([$db->lastInsertId(), $teacherId]);
+            }
+
+            $db->commit();
+            $message = 'Batch created successfully.';
+        } catch (PDOException $error) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            $message = 'Unable to create batch.';
+            $messageType = 'error';
+        }
+    }
+}
+
+$teachers = $db->query(
+    'SELECT teachers.id, users.name
+     FROM teachers INNER JOIN users ON users.id = teachers.user_id
+     WHERE users.status = \'active\'
+     ORDER BY users.name'
+)->fetchAll();
+
+$batches = $db->query(
+    'SELECT batches.id, batches.name, batches.start_date, batches.status,
+        COALESCE((
+            SELECT GROUP_CONCAT(users.name SEPARATOR \\', \\')
+            FROM batch_teachers
+            INNER JOIN teachers ON teachers.id = batch_teachers.teacher_id
+            INNER JOIN users ON users.id = teachers.user_id
+            WHERE batch_teachers.batch_id = batches.id
+        ), \'Not assigned\') AS teacher_names,
+        (
+            SELECT COUNT(*)
+            FROM enrollments
+            WHERE enrollments.batch_id = batches.id AND enrollments.status = \'active\'
+        ) AS student_count
+     FROM batches
+     ORDER BY batches.id DESC'
+)->fetchAll();
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -60,10 +128,14 @@
                 <select class="filter_select">
                     <option value="">All Status</option>
                     <option value="Active">Active</option>
-                    <option value="Upcoming">Upcoming</option>
+                    <option value="Inactive">Inactive</option>
                     <option value="Completed">Completed</option>
                 </select>
             </div>
+
+            <?php if ($message !== ''): ?>
+                <p class="form_message <?= $messageType; ?>"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></p>
+            <?php endif; ?>
 
             <!-- ব্যাচ টেবিল -->
             <div class="table_container">
@@ -80,42 +152,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>#B01</td>
-                            <td><strong>Batch A (HSC 2026)</strong></td>
-                            <td>Prof. Abdul Karim, Dr. Nusrat</td>
-                            <td>Mon, Wed, Fri (4:00 PM - 6:00 PM)</td>
-                            <td><span class="student_count_badge">👥 45 Students</span></td>
-                            <td><span class="status_active">Active</span></td>
-                            <td>
-                                <button class="btn_icon edit_btn" title="Edit">✏️</button>
-                                <button class="btn_icon delete_btn" title="Delete">🗑️</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#B02</td>
-                            <td><strong>Batch B (SSC 2026)</strong></td>
-                            <td>Mohammad Ali</td>
-                            <td>Sun, Tue, Thu (5:30 PM - 7:30 PM)</td>
-                            <td><span class="student_count_badge">👥 38 Students</span></td>
-                            <td><span class="status_active">Active</span></td>
-                            <td>
-                                <button class="btn_icon edit_btn" title="Edit">✏️</button>
-                                <button class="btn_icon delete_btn" title="Delete">🗑️</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#B03</td>
-                            <td><strong>Batch C (Special Math)</strong></td>
-                            <td>Prof. Abdul Karim</td>
-                            <td>Saturday (10:00 AM - 1:00 PM)</td>
-                            <td><span class="student_count_badge">👥 25 Students</span></td>
-                            <td><span class="status_active">Active</span></td>
-                            <td>
-                                <button class="btn_icon edit_btn" title="Edit">✏️</button>
-                                <button class="btn_icon delete_btn" title="Delete">🗑️</button>
-                            </td>
-                        </tr>
+                        <?php foreach ($batches as $batch): ?>
+                            <tr>
+                                <td>#B<?= (int) $batch['id']; ?></td>
+                                <td><strong><?= htmlspecialchars($batch['name'], ENT_QUOTES, 'UTF-8'); ?></strong></td>
+                                <td><?= htmlspecialchars($batch['teacher_names'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?= htmlspecialchars($batch['start_date'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><span class="student_count_badge">👥 <?= (int) $batch['student_count']; ?> Students</span></td>
+                                <td><span class="status_active"><?= htmlspecialchars(ucfirst($batch['status']), ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                <td>
+                                    <button class="btn_icon edit_btn" title="Edit" type="button">✏️</button>
+                                    <button class="btn_icon delete_btn" title="Delete" type="button">🗑️</button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
@@ -129,33 +179,30 @@
                 <h3>Create New Batch</h3>
                 <button class="close_modal" id="closeModal">&times;</button>
             </div>
-            <form class="modal_form">
+            <form class="modal_form" method="post">
                 <div class="form_group">
                     <label>Batch Name</label>
-                    <input type="text" placeholder="e.g. Batch A (HSC 2026)" required>
+                    <input type="text" name="name" placeholder="e.g. Batch A (HSC 2026)" required>
                 </div>
                 <div class="form_group">
-                    <label>Assign Primary Teacher</label>
-                    <select required>
-                        <option value="">Select Instructor</option>
-                        <option value="Prof. Abdul Karim">Prof. Abdul Karim (Mathematics)</option>
-                        <option value="Dr. Nusrat Jahan">Dr. Nusrat Jahan (Physics)</option>
-                        <option value="Mohammad Ali">Mohammad Ali (Chemistry)</option>
+                    <label>Assign Teacher</label>
+                    <select name="teacher_id">
+                        <option value="0">No teacher yet</option>
+                        <?php foreach ($teachers as $teacher): ?>
+                            <option value="<?= (int) $teacher['id']; ?>"><?= htmlspecialchars($teacher['name'], ENT_QUOTES, 'UTF-8'); ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="form_group">
-                    <label>Class Schedule / Days & Time</label>
-                    <input type="text" placeholder="e.g. Mon, Wed, Fri (4:00 PM - 6:00 PM)" required>
-                </div>
-                <div class="form_group">
-                    <label>Max Student Capacity</label>
-                    <input type="number" placeholder="e.g. 50" min="1" required>
+                    <label>Start Date</label>
+                    <input type="date" name="start_date" required>
                 </div>
                 <div class="form_group">
                     <label>Status</label>
-                    <select required>
-                        <option value="Active">Active</option>
-                        <option value="Upcoming">Upcoming</option>
+                    <select name="status" required>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="completed">Completed</option>
                     </select>
                 </div>
                 <div class="modal_buttons">
