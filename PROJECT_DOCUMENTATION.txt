@@ -1,0 +1,344 @@
+================================================================================
+                       COACHING MANAGEMENT SYSTEM
+              Requirement Analysis and Database Design Report
+================================================================================
+
+PROJECT INFORMATION
+-------------------
+Project Title : Coaching Management System
+Course        : Database Management Systems
+Group         : Group 07
+Members       : [Student Name - ID], [Student Name - ID], [Student Name - ID]
+Instructor    : [Instructor Name]
+Date          : September 29, 2026
+
+
+================================================================================
+1. INTRODUCTION & SCOPE
+================================================================================
+Traditional coaching institutions face operational challenges with fragmented
+paper registers and disconnected spreadsheets for student admissions, teacher
+assignments, fee tracking, attendance, and exam marks.
+
+The Coaching Management System provides a centralized relational database and a
+responsive web application with role-based access for Administrators, Teachers,
+and Students. It ensures:
+  1. Transactional consistency and zero duplicate entries.
+  2. Strict referential integrity across all entities.
+  3. Validated, user-friendly data entry web forms.
+
+
+================================================================================
+2. PROJECT FOLDER NAVIGATION & STRUCTURE
+================================================================================
+
+CoachingManagement/
+|
+|-- backend/
+|   |-- config/
+|   |   `-- database.php                 # Database PDO connection & configuration
+|   |-- controllers/
+|   |   |-- AttendanceController.php     # Daily attendance marking & query logic
+|   |   |-- AuthController.php           # Login, authentication & logout
+|   |   |-- BatchController.php          # Batch creation, status & allocations
+|   |   |-- DashboardController.php      # Role-based dashboard stats & overviews
+|   |   |-- ExamController.php           # Exam scheduling & subject linking
+|   |   |-- FeeController.php            # Monthly fee billing & status updates
+|   |   |-- ProfileController.php        # User profile view & update handling
+|   |   |-- ResultController.php         # Exam marks entry & grade calculation
+|   |   |-- StudentController.php        # Student registration & batch queries
+|   |   `-- TeacherController.php        # Teacher onboarding & allocations
+|   `-- middleware/
+|       `-- auth.php                     # Role-based access control & session checks
+|
+|-- database/
+|   |-- ERD.png                          # High-resolution Entity-Relationship Diagram
+|   |-- Schema.sql                       # Database DDL (tables, keys, constraints)
+|   `-- sample_data.sql                  # Sample test instances for all 10 tables
+|
+`-- frontend/
+    |-- index.php                        # Application entry point / redirector
+    `-- pages/
+        |-- login_page/
+        |   |-- loginPage.php            # Unified portal login interface
+        |   `-- loginStyle.css           # Login page responsive styling
+        |
+        |-- Admin DashBoard/
+        |   |-- admin_dashboard.php/.css # Admin KPI metrics & summary overview
+        |   |-- students.php/.css        # Student management & admission form
+        |   |-- teachers.php/.css        # Faculty management & onboarding form
+        |   |-- batches.php/.css         # Batch creation & teacher assignment
+        |   |-- exams.php/.css           # Examination setup & scheduling
+        |   |-- results.php/.css         # Marks evaluation & grading form
+        |   |-- fees.php/.css            # Student tuition collection & ledger
+        |   `-- admin_profile.php/.css   # Admin account security settings
+        |
+        |-- Teacher DashBoard/
+        |   |-- teacher_dashboard.php/.css  # Faculty overview & quick actions
+        |   |-- teacher_batches.php/.css    # Assigned batches & student rosters
+        |   |-- teacher_attendance.php/.css # Daily batch attendance logging
+        |   |-- teacher_results.php/.css    # Student exam marks entry
+        |   |-- teacher_students.php/.css   # Enrolled student directory
+        |   `-- teacher_profile.php/.css    # Faculty profile & subject expertise
+        |
+        `-- Student DashBoard/
+            |-- student_dashboard.php/.css  # Enrolled courses & recent notices
+            |-- student_attendance.php/.css # Personal attendance log
+            |-- student_classes_exams.php/.css # Class timetable & exam schedule
+            |-- student_results.php/.css    # Exam scorecards & letter grades
+            |-- student_fees.php/.css       # Tuition invoices & payment history
+            `-- student_profile.php/.css    # Student demographic details
+
+
+================================================================================
+3. REQUIREMENT ANALYSIS & ELICITATION
+================================================================================
+
+3.1 SURVEY & QUESTIONNAIRE SUMMARY (25 Respondents)
+---------------------------------------------------
+- 64% reported fee tracking as their most error-prone operational task.
+- 72% noted that students enroll in multiple batches over time (M:N).
+- 88% affirmed that batches have multiple subject teachers (M:N).
+- 80% recorded exam scores on physical registers or disconnected spreadsheets.
+- 96% required mandatory guardian emergency contacts during admission.
+- 92% required mobile-friendly, responsive forms for daily use.
+
+3.2 STAKEHOLDER INTERVIEWS SUMMARY
+----------------------------------
+- Managing Director: Needs real-time tracking of monthly fees (Paid/Unpaid/Partial)
+  and clear batch lifecycle states (Active, Inactive, Completed).
+- Senior Teacher: Emphasized that attendance must be recorded per batch per date
+  without duplicates, and exam marks must not exceed the exam's total marks.
+- Student: Requested instant online access to evaluated exam marks and fee receipts.
+
+3.3 FIELD OBSERVATIONS
+----------------------
+- Front-desk bottleneck: Repeated manual entry of student bio-data across forms.
+  Solution: Unified single-step admission creating both login account and student
+  profile within a single transaction.
+- Loose-sheet attendance loss.
+  Solution: Composite unique constraint enforcing single daily attendance per batch.
+
+3.4 EXISTING BUSINESS DOCUMENTS MAPPED TO DATABASE
+--------------------------------------------------
+1. Admission Slip      -> users (name, email, password) & students (roll, phone,
+                          gender, guardian_phone, address) & enrollments (batch_id).
+2. Tuition Fee Voucher -> fees (student_id, amount, month, status, payment_date).
+3. Exam Marksheet      -> exams (batch_id, subject_id, total_marks) & results
+                          (student_id, exam_id, marks, grade).
+
+
+================================================================================
+4. CONCEPTUAL DATA MODEL (ER DIAGRAM)
+================================================================================
+
+4.1 CORE ENTITIES (10 Entities + 2 Junction Entities)
+-----------------------------------------------------
+1. users          : System login credentials and roles (admin, teacher, student).
+2. students       : Academic and demographic profile of enrolled students.
+3. teachers       : Faculty details, specializations, and appointment dates.
+4. batches        : Academic cohorts categorized by schedule and status.
+5. subjects       : Curricular subjects taught in the coaching center.
+6. enrollments    : Student enrollment in batches (M:N junction).
+7. attendance     : Daily student attendance log per batch.
+8. exams          : Assessments scheduled for specific batches and subjects.
+9. results        : Evaluated student marks and letter grades.
+10. fees          : Monthly tuition fee billing and payment ledger.
+11. batch_teachers: Associative entity linking teachers to batches.
+12. batch_subjects: Associative entity linking subjects to batches.
+
+4.2 ENTITY RELATIONSHIPS & CARDINALITIES
+----------------------------------------
+- users      -> students       : 1 to 1 (Mandatory for student profile)
+- users      -> teachers       : 1 to 1 (Mandatory for teacher profile)
+- students   -> enrollments    : 1 to Many
+- batches    -> enrollments    : 1 to Many [UNIQUE(student_id, batch_id)]
+- teachers  <-> batches        : Many to Many (via batch_teachers)
+- batches   <-> subjects       : Many to Many (via batch_subjects)
+- students   -> attendance     : 1 to Many [UNIQUE(student_id, batch_id, date)]
+- batches    -> exams          : 1 to Many
+- subjects   -> exams          : 1 to Many
+- students   -> results        : 1 to Many
+- exams      -> results        : 1 to Many [UNIQUE(student_id, exam_id)]
+- students   -> fees           : 1 to Many
+
+* Complete visual ER diagram is available in the submission package: database/ERD.png
+
+
+================================================================================
+5. RELATIONAL SCHEMA DESIGN & DATA DICTIONARY
+================================================================================
+
+5.1 NORMALIZATION COMPLIANCE
+----------------------------
+- 1NF: All attributes are atomic. Multi-valued and repeating groups are eliminated.
+- 2NF: All relations use single surrogate primary keys (id). No partial dependencies.
+- 3NF: No transitive dependencies exist. User credentials reside in 'users' and
+       are referenced by foreign key, eliminating data redundancy.
+
+4.2 DATA DICTIONARY SUMMARY
+---------------------------
+
+Table: users
+- id          : BIGINT (PK, Auto Inc)
+- name        : VARCHAR(100), NOT NULL
+- email       : VARCHAR(150), NOT NULL, UNIQUE
+- password    : VARCHAR(255), NOT NULL
+- role        : ENUM('admin', 'teacher', 'student'), NOT NULL
+- status      : ENUM('active', 'inactive'), NOT NULL
+- created_at  : TIMESTAMP, DEFAULT CURRENT_TIMESTAMP
+
+Table: students
+- id             : BIGINT (PK, Auto Inc)
+- user_id        : BIGINT (FK -> users.id, UNIQUE)
+- roll           : VARCHAR(30), NOT NULL
+- gender         : ENUM('male', 'female', 'other'), NOT NULL
+- phone          : VARCHAR(20), NOT NULL
+- guardian_phone : VARCHAR(20), NOT NULL
+- address        : VARCHAR(255), NULL
+- created_at     : TIMESTAMP, DEFAULT CURRENT_TIMESTAMP
+
+Table: teachers
+- id                 : BIGINT (PK, Auto Inc)
+- user_id            : BIGINT (FK -> users.id, UNIQUE)
+- subject_specialist : VARCHAR(100), NULL
+- phone              : VARCHAR(20), NOT NULL
+- gender             : ENUM('male', 'female', 'other'), NOT NULL
+- address            : VARCHAR(255), NULL
+- joining_date       : DATE, NOT NULL
+- created_at         : TIMESTAMP, DEFAULT CURRENT_TIMESTAMP
+
+Table: batches
+- id         : BIGINT (PK, Auto Inc)
+- name       : VARCHAR(100), NOT NULL
+- start_date : DATE, NOT NULL
+- status     : ENUM('active', 'inactive', 'completed'), NOT NULL
+- created_at : TIMESTAMP, DEFAULT CURRENT_TIMESTAMP
+
+Table: subjects
+- id         : BIGINT (PK, Auto Inc)
+- name       : VARCHAR(100), NOT NULL
+- status     : ENUM('active', 'inactive'), NOT NULL
+- created_at : TIMESTAMP, DEFAULT CURRENT_TIMESTAMP
+
+Table: enrollments
+- id              : BIGINT (PK, Auto Inc)
+- student_id      : BIGINT (FK -> students.id)
+- batch_id        : BIGINT (FK -> batches.id)
+- enrollment_date : DATE, NOT NULL
+- status          : ENUM('active', 'inactive', 'completed'), NOT NULL
+- Constraint      : UNIQUE(student_id, batch_id)
+
+Table: attendance
+- id         : BIGINT (PK, Auto Inc)
+- student_id : BIGINT (FK -> students.id)
+- batch_id   : BIGINT (FK -> batches.id)
+- date       : DATE, NOT NULL
+- status     : ENUM('present', 'absent', 'late'), NOT NULL
+- Constraint : UNIQUE(student_id, batch_id, date)
+
+Table: exams
+- id          : BIGINT (PK, Auto Inc)
+- batch_id    : BIGINT (FK -> batches.id)
+- subject_id  : BIGINT (FK -> subjects.id)
+- name        : VARCHAR(100), NOT NULL
+- exam_date   : DATE, NOT NULL
+- total_marks : DECIMAL(5,2), NOT NULL
+- created_at  : TIMESTAMP, DEFAULT CURRENT_TIMESTAMP
+
+Table: results
+- id         : BIGINT (PK, Auto Inc)
+- student_id : BIGINT (FK -> students.id)
+- exam_id    : BIGINT (FK -> exams.id)
+- marks      : DECIMAL(5,2), NOT NULL
+- grade      : VARCHAR(5), NULL
+- Constraint : UNIQUE(student_id, exam_id)
+
+Table: fees
+- id           : BIGINT (PK, Auto Inc)
+- student_id   : BIGINT (FK -> students.id)
+- amount       : DECIMAL(10,2), NOT NULL
+- month        : DATE, NOT NULL
+- status       : ENUM('paid', 'unpaid', 'partial'), NOT NULL
+- payment_date : DATE, NULL
+- created_at   : TIMESTAMP, DEFAULT CURRENT_TIMESTAMP
+
+
+================================================================================
+6. UI DESIGN & DATA-ENTRY FORMS
+================================================================================
+
+6.1 FORM-TO-ERD TRACEABILITY MATRIX
+--------------------------------------------------------------------------------
+Web Form       Target Entity        Input Controls            Validations
+--------------------------------------------------------------------------------
+Add Student    students, users,     Text, Email, Tel, Select  Phone regex, Name
+(students.php) enrollments          (Gender, Batch), Password min 2, Pwd min 8
+
+Add Teacher    teachers, users      Text, Email, Tel, Select  Phone regex, Date
+(teachers.php)                      (Gender), Date, Password  required, Pwd min 8
+
+Create Batch   batches,             Text (Batch Name), Date,  Name min 2, Status
+(batches.php)  batch_teachers       Select (Teacher, Status)  restricted to Enum
+
+Schedule Exam  exams,               Text, Date, Number,       Date required,
+(exams.php)    batch_subjects       Select (Batch, Subject)   Marks > 0
+
+Marks Entry    results              Select (Student, Exam),   Marks >= 0 and
+(results.php)                       Number (Marks), Text      Marks <= total_marks
+
+Collect Fee    fees                 Select (Student, Status), Amount > 0, Month
+(fees.php)                          Date (Month), Number      Date required
+--------------------------------------------------------------------------------
+
+6.2 FOREIGN KEY HANDLING IN USER INTERFACE
+------------------------------------------
+- No manual numeric key entry: Users never type raw foreign IDs (e.g., student_id).
+- Contextual dropdown menus: Foreign keys are populated automatically via dropdown
+  menus displaying human-readable values (e.g., student names with rolls, batch
+  names, teacher names).
+- Safe fallbacks: If an optional foreign key is not selected, the system stores
+  appropriate default references.
+
+6.3 RESPONSIVE DESIGN SPECIFICATIONS
+------------------------------------
+- Desktop / Laptop: Forms are arranged in balanced 2-column grid rows (.form_row),
+  reducing vertical scrolling and fitting modals within standard screens.
+- Tablet / Mobile: Grid rows collapse cleanly into single-column layouts
+  (grid-template-columns: 1fr), modal overlays allow touch scrolling (max-height:
+  90vh; overflow-y: auto), and buttons expand to full width.
+
+
+================================================================================
+7. DATABASE ARTIFACTS & TESTING VERIFICATION
+================================================================================
+The project package includes two fully tested, verified SQL scripts:
+
+1. database/Schema.sql
+   - Complete DDL script with all table definitions, PRIMARY KEYs, UNIQUE
+     constraints, and ALTER TABLE foreign key relationships.
+
+2. database/sample_data.sql
+   - Complete DML script with 4 to 12 realistic test instances per table:
+     * users          : 9 records (1 admin, 4 teachers, 4 students)
+     * students       : 4 student records
+     * teachers       : 4 faculty records with diverse specializations
+     * batches        : 4 active/completed academic batches
+     * subjects       : 5 curricular subjects
+     * batch_teachers : 4 faculty assignments
+     * batch_subjects : 5 curriculum associations
+     * enrollments    : 4 batch admissions
+     * attendance     : 12 attendance logs across multiple dates
+     * exams          : 3 scheduled examinations
+     * results        : 5 student result scores with grades
+     * fees           : 4 monthly fee ledger transactions
+
+
+================================================================================
+8. CONCLUSION
+================================================================================
+The Coaching Management System demonstrates complete alignment between initial
+business requirements, conceptual ER modeling, normalized relational schema design,
+and validated, responsive user interface forms. The architecture guarantees data
+integrity, prevents manual key entry errors, and provides a dependable platform for
+academic administration.

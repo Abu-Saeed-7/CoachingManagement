@@ -1,0 +1,61 @@
+================================================================================
+                    COACHING MANAGEMENT SYSTEM
+                    PROJECT FOLDER NAVIGATION
+================================================================================
+
+CoachingManagement/
+|
+|-- backend/
+|   |-- config/
+|   |   `-- database.php                 # Database PDO connection & configuration
+|   |-- controllers/
+|   |   |-- AttendanceController.php     # Daily attendance marking & query logic
+|   |   |-- AuthController.php           # Login, authentication & logout
+|   |   |-- BatchController.php          # Batch creation, status & allocations
+|   |   |-- DashboardController.php      # Role-based dashboard stats & overviews
+|   |   |-- ExamController.php           # Exam scheduling & subject linking
+|   |   |-- FeeController.php            # Monthly fee billing & status updates
+|   |   |-- ProfileController.php        # User profile view & update handling
+|   |   |-- ResultController.php         # Exam marks entry & grade calculation
+|   |   |-- StudentController.php        # Student registration & batch queries
+|   |   `-- TeacherController.php        # Teacher onboarding & allocations
+|   `-- middleware/
+|       `-- auth.php                     # Role-based access control & session checks
+|
+|-- database/
+|   |-- ERD.png                          # High-resolution Entity-Relationship Diagram
+|   |-- Schema.sql                       # Database DDL (tables, keys, constraints)
+|   `-- sample_data.sql                  # Sample test instances for all 10 tables
+|
+`-- frontend/
+    |-- index.php                        # Application entry point / redirector
+    `-- pages/
+        |-- login_page/
+        |   |-- loginPage.php            # Unified portal login interface
+        |   `-- loginStyle.css           # Login page responsive styling
+        |
+        |-- Admin DashBoard/
+        |   |-- admin_dashboard.php/.css # Admin KPI metrics & summary overview
+        |   |-- students.php/.css        # Student management & admission form
+        |   |-- teachers.php/.css        # Faculty management & onboarding form
+        |   |-- batches.php/.css         # Batch creation & teacher assignment
+        |   |-- exams.php/.css           # Examination setup & scheduling
+        |   |-- results.php/.css         # Marks evaluation & grading form
+        |   |-- fees.php/.css            # Student tuition collection & ledger
+        |   `-- admin_profile.php/.css   # Admin account security settings
+        |
+        |-- Teacher DashBoard/
+        |   |-- teacher_dashboard.php/.css  # Faculty overview & quick actions
+        |   |-- teacher_batches.php/.css    # Assigned batches & student rosters
+        |   |-- teacher_attendance.php/.css # Daily batch attendance logging
+        |   |-- teacher_results.php/.css    # Student exam marks entry
+        |   |-- teacher_students.php/.css   # Enrolled student directory
+        |   `-- teacher_profile.php/.css    # Faculty profile & subject expertise
+        |
+        `-- Student DashBoard/
+            |-- student_dashboard.php/.css  # Enrolled courses & recent notices
+            |-- student_attendance.php/.css # Personal attendance log
+            |-- student_classes_exams.php/.css # Class timetable & exam schedule
+            |-- student_results.php/.css    # Exam scorecards & letter grades
+            |-- student_fees.php/.css       # Tuition invoices & payment history
+            `-- student_profile.php/.css    # Student demographic details
