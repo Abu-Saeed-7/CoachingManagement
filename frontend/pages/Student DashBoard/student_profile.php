@@ -1,3 +1,20 @@
+<?php
+require_once __DIR__ . '/../../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../../backend/controllers/ProfileController.php';
+
+checkAuth(['student', 'admin']);
+
+$studentSession = getCurrentStudentSession();
+$studentId = $studentSession['id'];
+$studentName = $studentSession['name'];
+
+$profileController = new ProfileController();
+$profileUpdate = $profileController->handleStudentProfileUpdate((int) $studentId);
+$message = $profileUpdate['message'];
+$messageType = $profileUpdate['messageType'];
+
+$student = $profileController->getStudentDetails((int) $studentId);
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -20,7 +37,7 @@
             <span class="nav_icon" title="Notifications">🔔</span>
             <a href="student_profile.php" class="student_profile_btn">
                 <span>🎓</span>
-                <span class="student_name">Rahim Ahmed ▾</span>
+                <span class="student_name"><?= htmlspecialchars($studentName, ENT_QUOTES, 'UTF-8'); ?> ▾</span>
             </a>
         </div>
     </header>
@@ -47,73 +64,81 @@
                 <p>View and manage your academic registration details.</p>
             </div>
 
+            <?php if ($message !== ''): ?>
+                <p style="padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; background: <?= $messageType === 'success' ? '#dcfce7' : '#fee2e2'; ?>; color: <?= $messageType === 'success' ? '#166534' : '#991b1b'; ?>;">
+                    <?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?>
+                </p>
+            <?php endif; ?>
+
             <div class="profile_layout">
                 <!-- LEFT PROFILE CARD -->
                 <div class="profile_card">
                     <div class="profile_avatar">🎓</div>
-                    <h2>Rahim Ahmed</h2>
-                    <span class="role_badge">Student (HSC 2026)</span>
+                    <h2><?= htmlspecialchars($student['name'] ?? $studentName, ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <span class="role_badge">Student</span>
 
                     <ul class="profile_info_list">
                         <li>
                             <span class="info_label">Student Roll / ID</span>
-                            <span class="info_value">#101</span>
+                            <span class="info_value">#<?= (int)($student['id'] ?? 0); ?> (Roll: <?= htmlspecialchars($student['roll'] ?? '—', ENT_QUOTES, 'UTF-8'); ?>)</span>
                         </li>
                         <li>
                             <span class="info_label">Enrolled Batch</span>
-                            <span class="info_value">Batch A (Higher Math, Physics, Chem)</span>
+                            <span class="info_value"><?= htmlspecialchars($student['batch_name'] ?? 'None', ENT_QUOTES, 'UTF-8'); ?></span>
                         </li>
                         <li>
                             <span class="info_label">Email Address</span>
-                            <span class="info_value">rahim@gmail.com</span>
+                            <span class="info_value"><?= htmlspecialchars($student['email'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></span>
                         </li>
                         <li>
                             <span class="info_label">Phone Number</span>
-                            <span class="info_value">01711-223344</span>
+                            <span class="info_value"><?= htmlspecialchars($student['phone'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></span>
                         </li>
                         <li>
                             <span class="info_label">Guardian Phone</span>
-                            <span class="info_value">01811-998877 (Father)</span>
+                            <span class="info_value"><?= htmlspecialchars($student['guardian_phone'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></span>
+                        </li>
+                        <li>
+                            <span class="info_label">Address</span>
+                            <span class="info_value"><?= htmlspecialchars($student['address'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></span>
                         </li>
                     </ul>
                 </div>
 
-                <!-- RIGHT EDIT FORM -->
+                <!-- RIGHT EDIT DETAILS CARD -->
                 <div class="profile_details_card">
-                    <h3>Personal Information</h3>
-                    <form class="profile_form">
+                    <h3>Update Contact Details</h3>
+                    <form class="profile_form" method="post">
                         <div class="form_row">
                             <div class="form_group">
                                 <label>Full Name</label>
-                                <input type="text" value="Rahim Ahmed">
+                                <input type="text" value="<?= htmlspecialchars($student['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" readonly style="background:#f9fafb;">
                             </div>
                             <div class="form_group">
-                                <label>Student ID</label>
-                                <input type="text" value="#101" readonly style="background:#f9fafb;">
+                                <label>Roll Number</label>
+                                <input type="text" value="<?= htmlspecialchars($student['roll'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" readonly style="background:#f9fafb;">
                             </div>
                         </div>
                         <div class="form_row">
-                            <div class="form_group">
-                                <label>Email Address</label>
-                                <input type="email" value="rahim@gmail.com">
-                            </div>
                             <div class="form_group">
                                 <label>Phone Number</label>
-                                <input type="tel" value="01711223344">
+                                <input type="tel" name="phone" value="<?= htmlspecialchars($student['phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" pattern="^\+?[0-9]{10,15}$" title="10 to 15 digit phone number" required>
+                            </div>
+                            <div class="form_group">
+                                <label>Guardian Phone</label>
+                                <input type="tel" name="guardian_phone" value="<?= htmlspecialchars($student['guardian_phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" pattern="^\+?[0-9]{10,15}$" title="10 to 15 digit phone number" required>
                             </div>
                         </div>
-                        <div class="form_row">
-                            <div class="form_group">
-                                <label>Guardian Name</label>
-                                <input type="text" value="Md. Faruk Ahmed">
-                            </div>
-                            <div class="form_group">
-                                <label>Guardian Contact</label>
-                                <input type="tel" value="01811998877">
-                            </div>
+                        <div class="form_group">
+                            <label>Address</label>
+                            <input type="text" name="address" value="<?= htmlspecialchars($student['address'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="Residential address" maxlength="255">
+                        </div>
+                        <div class="form_group">
+                            <label>New Password (Optional)</label>
+                            <input type="password" name="password" placeholder="Leave blank to keep same" minlength="8">
                         </div>
                         <div style="display:flex; justify-content:flex-end; margin-top:10px;">
-                            <button type="button" class="action_btn" onclick="alert('Profile changes saved!')">Update Profile</button>
+                            <button type="submit" class="action_btn">Save Changes</button>
                         </div>
                     </form>
                 </div>
@@ -130,6 +155,14 @@
                 sidebar.classList.toggle('mobile_open');
             } else {
                 sidebar.classList.toggle('collapsed');
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile_open')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile_open');
+                }
             }
         });
     </script>

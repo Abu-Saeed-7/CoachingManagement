@@ -1,23 +1,17 @@
--- =========================================================
--- StudyArena Database
--- Sample Data
--- Based on the submitted schema.sql
--- 3-5 sample records per table
--- created_at is omitted so DEFAULT CURRENT_TIMESTAMP is used
--- =========================================================
+
 
 -- =========================
 -- USERS
 -- =========================
 
 INSERT INTO users (id, name, email, password, role, status) VALUES
-(1, 'Admin User', 'admin@studyarena.com', 'admin123', 'admin', 'active'),
-(2, 'Rahim Ahmed', 'rahim@studyarena.com', 'teacher123', 'teacher', 'active'),
-(3, 'Karim Hasan', 'karim@studyarena.com', 'teacher123', 'teacher', 'active'),
-(4, 'Nusrat Jahan', 'nusrat@studyarena.com', 'teacher123', 'teacher', 'active'),
-(5, 'Rifat Islam', 'rifat@student.com', 'student123', 'student', 'active'),
-(6, 'Sakib Hossain', 'sakib@student.com', 'student123', 'student', 'active'),
-(7, 'Mim Akter', 'mim@student.com', 'student123', 'student', 'active');
+(1, 'Admin User', 'admin@gmail.com', 'admin123', 'admin', 'active'),
+(2, 'Rahim Ahmed', 'rahim@gmail.com', 'teacher123', 'teacher', 'active'),
+(3, 'Karim Hasan', 'karim@gmail.com', 'teacher123', 'teacher', 'active'),
+(4, 'Nusrat Jahan', 'nusrat@gmail.com', 'teacher123', 'teacher', 'active'),
+(5, 'Rifat Islam', 'rifat@gmail.com', 'student123', 'student', 'active'),
+(6, 'Sakib Hossain', 'sakib@gmail.com', 'student123', 'student', 'active'),
+(7, 'Mim Akter', 'mim@gmail.com', 'student123', 'student', 'active');
 
 
 -- =========================

@@ -1,3 +1,9 @@
+<?php
+require_once __DIR__ . '/../../../backend/controllers/AuthController.php';
+
+$authController = new AuthController();
+$error = $authController->handleLogin();
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -10,6 +16,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="loginStyle.css">
+    <style>
+        .error_banner {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #b91c1c;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+    </style>
 </head>
 
 <body>
@@ -26,21 +43,27 @@
 
     <!-- MAIN FORM CARD -->
     <main class="main">
-        <form id="loginForm">
+        <?php if (!empty($error)): ?>
+            <div class="error_banner">
+                <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?>
+            </div>
+        <?php endif; ?>
+
+        <form id="loginForm" method="post">
             <!-- SELECT ROLE OPTION -->
             <div class="role_div">
                 <label for="user_role">Select Role</label>
-                <select id="user_role" required>
-                    <option value="admin">Admin</option>
-                    <option value="teacher">Teacher</option>
-                    <option value="student">Student</option>
+                <select id="user_role" name="role" required>
+                    <option value="admin" <?= (($_POST['role'] ?? '') === 'admin') ? 'selected' : ''; ?>>Admin</option>
+                    <option value="teacher" <?= (($_POST['role'] ?? '') === 'teacher') ? 'selected' : ''; ?>>Teacher</option>
+                    <option value="student" <?= (($_POST['role'] ?? '') === 'student') ? 'selected' : ''; ?>>Student</option>
                 </select>
             </div>
 
             <!-- EMAIL INPUT -->
             <div class="email_div">
                 <label for="email_address">Email Address</label>
-                <input type="email" id="email_address" placeholder="name@example.com" required>
+                <input type="email" id="email_address" name="email" placeholder="name@example.com" value="<?= htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" required>
             </div>
 
             <!-- PASSWORD INPUT WITH SHOW/HIDE -->
@@ -50,17 +73,11 @@
                     <a href="#" class="forgot_link" onclick="alert('Please contact the System Administrator to reset your password.')">Forgot password?</a>
                 </div>
                 <div class="password_wrapper">
-                    <input type="password" id="password" placeholder="Enter your password" required>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
                     <button type="button" id="togglePassword" class="toggle_btn" aria-label="Toggle password visibility">
                         <img src="eye.svg" id="eyeIcon" alt="Show/Hide Password">
                     </button>
                 </div>
-            </div>
-
-            <!-- REMEMBER ME -->
-            <div class="remember_check">
-                <input type="checkbox" id="checkbox">
-                <label for="checkbox">Remember this device</label>
             </div>
 
             <!-- SIGN IN BUTTON -->
@@ -87,7 +104,7 @@
 
     <!-- JAVASCRIPT -->
     <script>
-        // 1. Password Show/Hide Toggle
+        // Password Show/Hide Toggle
         const passwordInput = document.getElementById("password");
         const togglePassword = document.getElementById("togglePassword");
 
@@ -96,21 +113,6 @@
                 passwordInput.type = "text";
             } else {
                 passwordInput.type = "password";
-            }
-        });
-
-        // 2. Form Submission & Role-based Redirection
-        const loginForm = document.getElementById("loginForm");
-        loginForm.addEventListener("submit", function (e) {
-            e.preventDefault();
-            const role = document.getElementById("user_role").value;
-
-            if (role === "admin") {
-                window.location.href = "../Admin DashBoard/admin_dashboard.php";
-            } else if (role === "teacher") {
-                window.location.href = "../Teacher DashBoard/teacher_dashboard.php";
-            } else if (role === "student") {
-                window.location.href = "../Student DashBoard/student_dashboard.php";
             }
         });
     </script>

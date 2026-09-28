@@ -129,3 +129,38 @@
     font-size: 12px;
     font-weight: 600;
 }
+
+/* ========================================================
+   RESPONSIVE DESIGN (Tablets, Laptops, Mobile)
+   ======================================================== */
+@media (max-width: 768px) {
+    .page_header {
+        margin-bottom: 16px;
+    }
+
+    .att_summary_row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .attendance_table_card {
+        padding: 16px 12px;
+    }
+
+    .custom_table {
+        min-width: 480px;
+    }
+}
+
+@media (max-width: 480px) {
+    .att_summary_row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .custom_table th,
+    .custom_table td {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+}

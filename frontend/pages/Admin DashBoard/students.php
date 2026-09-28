@@ -1,72 +1,16 @@
 <?php
-require_once __DIR__ . '/../../../backend/config/database.php';
+require_once __DIR__ . '/../../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../../backend/controllers/StudentController.php';
 
-$message = '';
-$messageType = 'success';
+checkAuth(['admin']);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = trim($_POST['name'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $roll = trim($_POST['roll'] ?? '');
-    $gender = $_POST['gender'] ?? '';
-    $phone = trim($_POST['phone'] ?? '');
-    $address = trim($_POST['address'] ?? '');
-    $guardianPhone = trim($_POST['guardian_phone'] ?? '');
-    $batchId = (int) ($_POST['batch_id'] ?? 0);
+$studentController = new StudentController();
+$postResult = $studentController->handleAddStudent();
+$message = $postResult['message'];
+$messageType = $postResult['messageType'];
 
-    if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8 ||
-        $roll === '' || !in_array($gender, ['male', 'female', 'other'], true) ||
-        $phone === '' || $guardianPhone === '' || $batchId < 1) {
-        $message = 'Please provide valid values. Password must contain at least 8 characters.';
-        $messageType = 'error';
-    } else {
-        try {
-            $db->beginTransaction();
-
-            $userStatement = $db->prepare(
-                'INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, \'student\', \'active\')'
-            );
-            $userStatement->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT)]);
-
-            $studentStatement = $db->prepare(
-                'INSERT INTO students (user_id, roll, gender, phone, address, guardian_phone) VALUES (?, ?, ?, ?, ?, ?)'
-            );
-            $studentStatement->execute([
-                $db->lastInsertId(),
-                $roll,
-                $gender,
-                $phone,
-                $address ?: null,
-                $guardianPhone,
-            ]);
-
-            $enrollmentStatement = $db->prepare(
-                'INSERT INTO enrollments (student_id, batch_id, enrollment_date, status) VALUES (?, ?, CURDATE(), \'active\')'
-            );
-            $enrollmentStatement->execute([$db->lastInsertId(), $batchId]);
-
-            $db->commit();
-            $message = 'Student added successfully.';
-        } catch (PDOException $error) {
-            if ($db->inTransaction()) {
-                $db->rollBack();
-            }
-            $message = $error->errorInfo[1] === 1062 ? 'This email or roll is already registered.' : 'Unable to add student.';
-            $messageType = 'error';
-        }
-    }
-}
-
-$batches = $db->query("SELECT id, name FROM batches WHERE status = 'active' ORDER BY name")->fetchAll();
-$students = $db->query(
-    'SELECT students.id, students.roll, users.name, users.email, students.phone, users.status, batches.name AS batch_name
-     FROM students
-     INNER JOIN users ON users.id = students.user_id
-     LEFT JOIN enrollments ON enrollments.student_id = students.id AND enrollments.status = \'active\'
-     LEFT JOIN batches ON batches.id = enrollments.batch_id
-     ORDER BY students.id DESC'
-)->fetchAll();
+$batches = $studentController->getActiveBatches();
+$students = $studentController->getAllStudents();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -129,15 +73,21 @@ $students = $db->query(
                 <input type="text" class="search_input" placeholder="🔍 Search by name, roll or phone...">
                 <select class="filter_select">
                     <option value="">All Batches</option>
-                    <option value="Batch A">Batch A</option>
-                    <option value="Batch B">Batch B</option>
-                    <option value="Batch C">Batch C</option>
+                    <?php foreach ($batches as $batch): ?>
+                        <option value="<?= htmlspecialchars($batch['name'], ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($batch['name'], ENT_QUOTES, 'UTF-8'); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
 
             <!-- স্টুডেন্ট টেবিল -->
-            <?php if ($message !== ''): ?>
-                <p class="form_message <?= $messageType; ?>"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></p>
+            <?php if (!empty($errors)): ?>
+                <div class="form_message error" style="background:#fee2e2; border-left:4px solid #ef4444; color:#b91c1c; padding:12px 16px; border-radius:6px; margin-bottom:16px;">
+                    <?php foreach ($errors as $err): ?>
+                        <div style="margin-bottom: 4px;">⚠️ <?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8'); ?></div>
+                    <?php endforeach; ?>
+                </div>
+            <?php elseif ($message !== ''): ?>
+                <div class="form_message <?= $messageType; ?>"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></div>
             <?php endif; ?>
 
             <div class="table_container">
@@ -161,7 +111,8 @@ $students = $db->query(
                                 <td><?= htmlspecialchars($student['email'], ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?= htmlspecialchars($student['phone'], ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><span class="badge"><?= htmlspecialchars($student['batch_name'] ?? 'Not assigned', ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                <td><span class="status_active"><?= htmlspecialchars(ucfirst($student['status']), ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                <?php $studentStatus = strtolower($student['status'] ?? 'active'); ?>
+                                <td><span class="<?= $studentStatus === 'active' ? 'status_active' : 'status_inactive'; ?>"><?= htmlspecialchars(ucfirst($studentStatus), ENT_QUOTES, 'UTF-8'); ?></span></td>
                                 <td>
                                     <button class="btn_icon edit_btn" title="Edit" type="button">✏️</button>
                                     <button class="btn_icon delete_btn" title="Delete" type="button">🗑️</button>
@@ -182,52 +133,67 @@ $students = $db->query(
                 <button class="close_modal" id="closeModal">&times;</button>
             </div>
             <form class="modal_form" method="post">
-                <div class="form_group">
-                    <label>Full Name</label>
-                    <input type="text" name="name" placeholder="e.g. Rahim Ahmed" required>
+                <div class="form_row">
+                    <div class="form_group">
+                        <label>Full Name</label>
+                        <input type="text" name="name" value="<?= htmlspecialchars($_POST['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. Rahim Ahmed" minlength="2" maxlength="100" required>
+                    </div>
+                    <div class="form_group">
+                        <label>Email Address</label>
+                        <input type="email" name="email" value="<?= htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="name@example.com" maxlength="150" required>
+                    </div>
                 </div>
-                <div class="form_group">
-                    <label>Email Address</label>
-                    <input type="email" name="email" placeholder="name@example.com" required>
+
+                <div class="form_row">
+                    <div class="form_group">
+                        <label>Phone Number</label>
+                        <input type="tel" name="phone" value="<?= htmlspecialchars($_POST['phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. 01712345678" pattern="^\+?[0-9]{10,15}$" title="10 to 15 digit phone number" required>
+                    </div>
+                    <div class="form_group">
+                        <label>Roll</label>
+                        <input type="text" name="roll" value="<?= htmlspecialchars($_POST['roll'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. 101" maxlength="30" required>
+                    </div>
                 </div>
-                <div class="form_group">
-                    <label>Phone Number</label>
-                    <input type="tel" name="phone" placeholder="017XXXXXXXX" required>
+
+                <div class="form_row">
+                    <div class="form_group">
+                        <label>Gender</label>
+                        <select name="gender" required>
+                            <option value="">Select gender</option>
+                            <option value="male" <?= ($_POST['gender'] ?? '') === 'male' ? 'selected' : ''; ?>>Male</option>
+                            <option value="female" <?= ($_POST['gender'] ?? '') === 'female' ? 'selected' : ''; ?>>Female</option>
+                            <option value="other" <?= ($_POST['gender'] ?? '') === 'other' ? 'selected' : ''; ?>>Other</option>
+                        </select>
+                    </div>
+                    <div class="form_group">
+                        <label>Guardian Phone</label>
+                        <input type="tel" name="guardian_phone" value="<?= htmlspecialchars($_POST['guardian_phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. 01812345678" pattern="^\+?[0-9]{10,15}$" title="10 to 15 digit phone number" required>
+                    </div>
                 </div>
-                <div class="form_group">
-                    <label>Roll</label>
-                    <input type="text" name="roll" placeholder="e.g. 101" required>
+
+                <div class="form_row">
+                    <div class="form_group">
+                        <label>Select Batch (Optional)</label>
+                        <select name="batch_id">
+                            <option value="0">No batch assigned yet</option>
+                            <?php foreach ($batches as $batch): ?>
+                                <option value="<?= (int) $batch['id']; ?>" <?= ((int)($_POST['batch_id'] ?? 0) === (int)$batch['id']) ? 'selected' : ''; ?>>
+                                    <?= htmlspecialchars($batch['name'], ENT_QUOTES, 'UTF-8'); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form_group">
+                        <label>Password</label>
+                        <input type="password" name="password" placeholder="At least 8 characters" minlength="8" required>
+                    </div>
                 </div>
-                <div class="form_group">
-                    <label>Gender</label>
-                    <select name="gender" required>
-                        <option value="">Select gender</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Other</option>
-                    </select>
-                </div>
-                <div class="form_group">
-                    <label>Guardian Phone</label>
-                    <input type="tel" name="guardian_phone" placeholder="017XXXXXXXX" required>
-                </div>
+
                 <div class="form_group">
                     <label>Address</label>
-                    <input type="text" name="address" placeholder="Student address">
+                    <input type="text" name="address" value="<?= htmlspecialchars($_POST['address'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="Student address" maxlength="255">
                 </div>
-                <div class="form_group">
-                    <label>Select Batch</label>
-                    <select name="batch_id" required>
-                        <option value="">Select a batch</option>
-                        <?php foreach ($batches as $batch): ?>
-                            <option value="<?= (int) $batch['id']; ?>"><?= htmlspecialchars($batch['name'], ENT_QUOTES, 'UTF-8'); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form_group">
-                    <label>Password</label>
-                    <input type="password" name="password" placeholder="At least 8 characters" minlength="8" required>
-                </div>
+
                 <div class="modal_buttons">
                     <button type="button" class="btn_cancel" id="cancelModal">Cancel</button>
                     <button type="submit" class="action_btn">Save Student</button>
@@ -249,6 +215,14 @@ $students = $db->query(
             }
         });
 
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile_open')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile_open');
+                }
+            }
+        });
+
         // Modal Open / Close
         const openAddModal = document.getElementById('openAddModal');
         const closeModal = document.getElementById('closeModal');
@@ -258,6 +232,13 @@ $students = $db->query(
         openAddModal.addEventListener('click', () => studentModal.classList.add('show'));
         closeModal.addEventListener('click', () => studentModal.classList.remove('show'));
         cancelModal.addEventListener('click', () => studentModal.classList.remove('show'));
+        studentModal.addEventListener('click', (e) => {
+            if (e.target === studentModal) studentModal.classList.remove('show');
+        });
+
+        <?php if ($messageType === 'error'): ?>
+        studentModal.classList.add('show');
+        <?php endif; ?>
     </script>
 </body>
 

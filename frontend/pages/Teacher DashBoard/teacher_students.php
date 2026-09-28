@@ -1,3 +1,20 @@
+<?php
+require_once __DIR__ . '/../../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../../backend/controllers/BatchController.php';
+require_once __DIR__ . '/../../../backend/controllers/StudentController.php';
+
+checkAuth(['teacher', 'admin']);
+
+$teacher = getCurrentTeacherSession();
+$teacherId = $teacher['id'];
+$teacherName = $teacher['name'];
+
+$batchController = new BatchController();
+$studentController = new StudentController();
+
+$myBatches = $batchController->getTeacherBatches((int) $teacherId);
+$students = $studentController->getTeacherStudents((int) $teacherId);
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -21,7 +38,7 @@
             <span class="nav_icon" title="Search">🔍</span>
             <a href="teacher_profile.php" class="teacher_profile_btn">
                 <span>👨‍🏫</span>
-                <span class="teacher_name">Prof. Karim ▾</span>
+                <span class="teacher_name"><?= htmlspecialchars($teacherName, ENT_QUOTES, 'UTF-8'); ?> ▾</span>
             </a>
         </div>
     </header>
@@ -47,23 +64,24 @@
             <div class="page_header">
                 <div>
                     <h1>My Assigned Students</h1>
-                    <p>Viewing students currently enrolled in your batches (Batch A & Batch C).</p>
+                    <p>Viewing students currently enrolled in your batches.</p>
                 </div>
             </div>
 
             <!-- SEARCH & ASSIGNED BATCHES FILTER -->
             <div class="table_controls">
-                <input type="text" class="search_input" placeholder="🔍 Search by student name, roll or phone...">
-                <select class="filter_select">
+                <input type="text" id="searchInput" class="search_input" placeholder="🔍 Search by student name, roll or phone...">
+                <select id="batchFilter" class="filter_select">
                     <option value="">All My Batches</option>
-                    <option value="Batch A">Batch A (HSC 2026 - Higher Math)</option>
-                    <option value="Batch C">Batch C (Special Math)</option>
+                    <?php foreach ($myBatches as $b): ?>
+                        <option value="<?= htmlspecialchars($b['name'], ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($b['name'], ENT_QUOTES, 'UTF-8'); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
 
             <!-- ASSIGNED STUDENTS TABLE -->
             <div class="table_container">
-                <table class="custom_table">
+                <table class="custom_table" id="studentsTable">
                     <thead>
                         <tr>
                             <th>Roll / ID</th>
@@ -71,71 +89,24 @@
                             <th>Enrolled Batch</th>
                             <th>Email Address</th>
                             <th>Phone</th>
-                            <th>Attendance Rate</th>
-                            <th>Quick Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>#101</td>
-                            <td><strong>Rahim Ahmed</strong></td>
-                            <td><span class="badge">Batch A</span></td>
-                            <td>rahim@gmail.com</td>
-                            <td>01711-XXXXXX</td>
-                            <td><span class="att_rate att_high">95% (19/20)</span></td>
-                            <td>
-                                <a href="teacher_attendance.php" class="btn_action" title="View Attendance">📋 Attendance</a>
-                                <a href="teacher_results.php" class="btn_action" title="View/Enter Marks">📊 Marks</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#102</td>
-                            <td><strong>Karim Khan</strong></td>
-                            <td><span class="badge">Batch A</span></td>
-                            <td>karim@gmail.com</td>
-                            <td>01822-XXXXXX</td>
-                            <td><span class="att_rate att_high">88% (18/20)</span></td>
-                            <td>
-                                <a href="teacher_attendance.php" class="btn_action" title="View Attendance">📋 Attendance</a>
-                                <a href="teacher_results.php" class="btn_action" title="View/Enter Marks">📊 Marks</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#103</td>
-                            <td><strong>Sakib Hasan</strong></td>
-                            <td><span class="badge">Batch A</span></td>
-                            <td>sakib@gmail.com</td>
-                            <td>01933-XXXXXX</td>
-                            <td><span class="att_rate att_low">65% (13/20)</span></td>
-                            <td>
-                                <a href="teacher_attendance.php" class="btn_action" title="View Attendance">📋 Attendance</a>
-                                <a href="teacher_results.php" class="btn_action" title="View/Enter Marks">📊 Marks</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#104</td>
-                            <td><strong>Nusrat Fariha</strong></td>
-                            <td><span class="badge">Batch C</span></td>
-                            <td>fariha@gmail.com</td>
-                            <td>01644-XXXXXX</td>
-                            <td><span class="att_rate att_high">90% (18/20)</span></td>
-                            <td>
-                                <a href="teacher_attendance.php" class="btn_action" title="View Attendance">📋 Attendance</a>
-                                <a href="teacher_results.php" class="btn_action" title="View/Enter Marks">📊 Marks</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#105</td>
-                            <td><strong>Tanvir Mahmud</strong></td>
-                            <td><span class="badge">Batch C</span></td>
-                            <td>tanvir@gmail.com</td>
-                            <td>01555-XXXXXX</td>
-                            <td><span class="att_rate att_high">92% (19/20)</span></td>
-                            <td>
-                                <a href="teacher_attendance.php" class="btn_action" title="View Attendance">📋 Attendance</a>
-                                <a href="teacher_results.php" class="btn_action" title="View/Enter Marks">📊 Marks</a>
-                            </td>
-                        </tr>
+                        <?php if (empty($students)): ?>
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: #6b7280; padding: 24px;">No students enrolled in your batches yet.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($students as $s): ?>
+                                <tr>
+                                    <td>#<?= (int) $s['id']; ?> (Roll: <?= htmlspecialchars($s['roll'], ENT_QUOTES, 'UTF-8'); ?>)</td>
+                                    <td><strong><?= htmlspecialchars($s['name'], ENT_QUOTES, 'UTF-8'); ?></strong></td>
+                                    <td><span class="badge" style="background:#eef2ff; color:#4f46e5; padding:3px 8px; border-radius:12px; font-size:12px;"><?= htmlspecialchars($s['batch_name'], ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                    <td><?= htmlspecialchars($s['email'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td><?= htmlspecialchars($s['phone'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -153,6 +124,34 @@
                 sidebar.classList.toggle('collapsed');
             }
         });
+
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile_open')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile_open');
+                }
+            }
+        });
+
+        // Search & Filter
+        const searchInput = document.getElementById('searchInput');
+        const batchFilter = document.getElementById('batchFilter');
+
+        function filterTable() {
+            const term = searchInput.value.toLowerCase();
+            const batch = batchFilter.value.toLowerCase();
+            const rows = document.querySelectorAll('#studentsTable tbody tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const matchesSearch = text.includes(term);
+                const matchesBatch = !batch || text.includes(batch);
+                row.style.display = (matchesSearch && matchesBatch) ? '' : 'none';
+            });
+        }
+
+        if (searchInput) searchInput.addEventListener('keyup', filterTable);
+        if (batchFilter) batchFilter.addEventListener('change', filterTable);
     </script>
 </body>
 

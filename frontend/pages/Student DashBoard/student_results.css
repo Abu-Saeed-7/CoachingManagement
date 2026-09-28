@@ -110,3 +110,38 @@
     font-size: 12px;
     font-weight: 600;
 }
+
+/* ========================================================
+   RESPONSIVE DESIGN (Tablets, Laptops, Mobile)
+   ======================================================== */
+@media (max-width: 768px) {
+    .page_header {
+        margin-bottom: 16px;
+    }
+
+    .results_stat_row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .results_table_card {
+        padding: 16px 12px;
+    }
+
+    .custom_table {
+        min-width: 550px;
+    }
+}
+
+@media (max-width: 480px) {
+    .results_stat_row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .custom_table th,
+    .custom_table td {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+}

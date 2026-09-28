@@ -340,11 +340,87 @@ body {
 }
 
 /* ========================================================
-   মোবাইল ও ট্যাবলেট রেসপন্সিভ ফিক্স (Screen <= 768px)
+   RESPONSIVE DESIGN (Desktop, Laptop, Tablet & Mobile)
    ======================================================== */
-@media (max-width: 768px) {
 
-    /* স্ক্রিনের বাইরে যাওয়া বন্ধ ও ফুল উইডথ নিশ্চিত করা */
+/* ১. ULTRA-WIDE & 4K SCREENS (> 1600px) */
+@media (min-width: 1600px) {
+    .main_content {
+        max-width: 1800px;
+        margin: 0 auto;
+        padding: 32px;
+    }
+
+    .stats_grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 20px;
+    }
+
+    .stat_card {
+        padding: 22px 20px;
+    }
+
+    .info_grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 28px;
+    }
+}
+
+/* ২. LAPTOPS & STANDARD DESKTOPS (1025px - 1599px) */
+@media (min-width: 1025px) and (max-width: 1599px) {
+    .main_content {
+        padding: 24px;
+    }
+
+    .stats_grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+}
+
+/* ৩. TABLETS & SMALL LAPTOPS (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .sidebar {
+        width: 190px;
+    }
+
+    .sidebar_menu li a {
+        padding: 10px 14px;
+        font-size: 13px;
+        gap: 8px;
+    }
+
+    .main_content {
+        padding: 18px;
+    }
+
+    .stats_grid {
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 12px;
+    }
+
+    .stat_card {
+        padding: 14px 12px;
+    }
+
+    .card_icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .card_value {
+        font-size: 18px;
+    }
+
+    .info_grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+/* ৪. MOBILE & TABLETS (<= 768px) */
+@media (max-width: 768px) {
     html,
     body {
         overflow-x: hidden;
@@ -354,48 +430,65 @@ body {
     .dashboard_container {
         width: 100%;
         overflow-x: hidden;
+        position: relative;
     }
 
-    /* ১. TOP NAVBAR */
+    /* TOP NAVBAR */
     .top_navbar {
-        padding: 10px 12px;
+        padding: 10px 14px;
+        position: sticky;
+        top: 0;
+        z-index: 1100;
+    }
+
+    .nav_left {
+        gap: 10px;
     }
 
     .system_title {
-        font-size: 12px;
+        font-size: 13px;
         line-height: 1.2;
+        max-width: 220px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .nav_right {
-        gap: 10px;
+        gap: 12px;
     }
 
     .admin_name {
         display: none;
-        /* মোবাইলে শুধু প্রোফাইল আইকন দেখাবে */
     }
 
     .admin_profile {
-        padding: 4px 8px;
+        padding: 5px 10px;
+        font-size: 13px;
     }
 
-    /* ২. SIDEBAR */
+    /* SIDEBAR DRAWER WITH DIMMED BACKDROP */
     .sidebar {
         position: fixed;
-        left: -240px;
-        top: 55px;
-        height: calc(100vh - 55px);
-        z-index: 1000;
-        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.15);
+        left: -270px;
+        top: 0;
+        bottom: 0;
+        width: 260px;
+        height: 100vh;
+        z-index: 2000;
+        box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25);
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        padding-top: 20px;
     }
 
     .sidebar.mobile_open {
         left: 0;
+        box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.5);
     }
 
-    /* ৩. MAIN CONTENT ও হেডিং */
+    /* MAIN CONTENT */
     .main_content {
-        padding: 12px;
+        padding: 14px;
         width: 100%;
         min-width: 0;
     }
@@ -405,51 +498,40 @@ body {
     }
 
     .welcome_section h1 {
-        font-size: 18px;
+        font-size: 19px;
     }
 
     .welcome_section p {
         font-size: 12px;
     }
 
-    /* ৪. STATISTICS CARDS (স্ক্রিনের সাইজ অনুযায়ী নিজে থেকে ফিট হবে) */
+    /* STATS GRID */
     .stats_grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        width: 100%;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
         margin-bottom: 20px;
     }
 
     .stat_card {
-        padding: 10px 8px;
-        gap: 6px;
-        min-width: 0;
+        padding: 12px 10px;
+        gap: 10px;
     }
 
     .card_icon {
-        width: 32px;
-        height: 32px;
-        font-size: 16px;
-        flex-shrink: 0;
-    }
-
-    .card_info {
-        min-width: 0;
+        width: 38px;
+        height: 38px;
+        font-size: 18px;
     }
 
     .card_info h3 {
-        font-size: 10px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        font-size: 11px;
     }
 
     .card_value {
-        font-size: 15px;
+        font-size: 16px;
     }
 
-    /* ৫. QUICK ACTIONS (২টি সমান কলামে বাটনগুলো সুন্দরভাবে বসবে) */
+    /* QUICK ACTIONS */
     .quick_actions_section {
         margin-bottom: 20px;
     }
@@ -457,25 +539,61 @@ body {
     .action_buttons {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 8px;
+        gap: 10px;
         width: 100%;
     }
 
     .action_btn {
         width: 100%;
-        font-size: 11px;
-        padding: 10px 6px;
+        font-size: 12px;
+        padding: 11px 8px;
         justify-content: center;
+        min-height: 42px;
     }
 
-    /* ৬. INFORMATION CARDS */
+    /* INFORMATION CARDS */
     .info_grid {
         grid-template-columns: 1fr;
-        gap: 12px;
+        gap: 14px;
         width: 100%;
     }
 
     .info_card {
-        padding: 14px;
+        padding: 16px;
+    }
+}
+
+/* ৫. SMALL MOBILE PHONES (<= 480px) */
+@media (max-width: 480px) {
+    .top_navbar {
+        padding: 8px 10px;
+    }
+
+    .system_title {
+        font-size: 11px;
+        max-width: 160px;
+    }
+
+    .main_content {
+        padding: 10px;
+    }
+
+    .welcome_section h1 {
+        font-size: 17px;
+    }
+
+    .stats_grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .action_buttons {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .action_btn {
+        padding: 12px;
+        font-size: 13px;
     }
 }

@@ -88,6 +88,15 @@
     font-weight: 600;
 }
 
+.status_inactive {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
 .btn_icon {
     background: none;
     border: none;
@@ -123,10 +132,12 @@
 .modal_box {
     background-color: #ffffff;
     width: 100%;
-    max-width: 440px;
-    border-radius: 12px;
+    max-width: 620px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 14px;
     padding: 24px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .modal_header {
@@ -155,6 +166,12 @@
     gap: 14px;
 }
 
+.form_row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
 .form_group {
     display: flex;
     flex-direction: column;
@@ -169,11 +186,20 @@
 
 .form_group input,
 .form_group select {
-    padding: 10px;
+    padding: 10px 12px;
     border: 1px solid #d1d5db;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 14px;
     outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form_group input:focus,
+.form_group select:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
 .modal_buttons {
@@ -191,4 +217,70 @@
     border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
+}
+
+/* ========================================================
+   RESPONSIVE DESIGN (Tablets, Laptops, Mobile)
+   ======================================================== */
+@media (max-width: 768px) {
+    .page_header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .page_header .action_btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+    }
+
+    .table_controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .search_input,
+    .filter_select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .modal_box {
+        max-width: 95vw;
+        max-height: 88vh;
+        overflow-y: auto;
+        padding: 20px 16px;
+    }
+
+    .modal_buttons {
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+
+    .modal_buttons button,
+    .modal_buttons .action_btn,
+    .modal_buttons .btn_cancel {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .custom_table {
+        min-width: 550px;
+    }
+}
+
+@media (max-width: 640px) {
+    .form_row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .custom_table th,
+    .custom_table td {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
 }

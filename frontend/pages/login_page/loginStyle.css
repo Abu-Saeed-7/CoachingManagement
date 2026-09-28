@@ -247,11 +247,76 @@ footer {
     text-decoration: underline;
 }
 
+/* ========================================================
+   RESPONSIVE DESIGN (Desktop, Laptop, Tablet, Mobile)
+   ======================================================== */
+@media (min-width: 1600px) {
+    .main {
+        max-width: 460px;
+    }
+
+    .headline h1 {
+        font-size: 28px;
+    }
+
+    form {
+        padding: 34px 28px;
+    }
+}
+
 @media (max-width: 480px) {
     body {
+        padding: 20px 12px;
+        justify-content: flex-start;
+        padding-top: 30px;
+    }
+
+    .cap {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 10px;
+    }
+
+    .headline h1 {
+        font-size: 20px;
+    }
+
+    .headline p {
+        font-size: 12px;
+    }
+
+    .main {
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+    }
+
+    form {
+        padding: 20px 16px;
+        gap: 14px;
+    }
+
+    .sign_in_button button {
+        padding: 13px;
+        font-size: 15px;
+    }
+
+    .contract {
+        flex-direction: column;
+        gap: 2px;
+    }
+}
+
+@media (max-width: 360px) {
+    .headline h1 {
+        font-size: 18px;
+    }
+
+    form {
         padding: 16px 12px;
     }
-    form {
-        padding: 22px 18px;
+
+    .policy {
+        flex-wrap: wrap;
+        justify-content: center;
     }
 }

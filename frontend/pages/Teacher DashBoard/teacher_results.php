@@ -1,3 +1,25 @@
+<?php
+require_once __DIR__ . '/../../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../../backend/controllers/ResultController.php';
+
+checkAuth(['teacher', 'admin']);
+
+$teacher = getCurrentTeacherSession();
+$teacherId = $teacher['id'];
+$teacherName = $teacher['name'];
+
+$resultController = new ResultController();
+$postResult = $resultController->handleSaveTeacherMarks((int) $teacherId);
+$message = $postResult['message'];
+$messageType = $postResult['messageType'];
+
+$selectedExamId = (int) ($_GET['exam_id'] ?? 0);
+$gradingView = $resultController->getTeacherGradingView((int) $teacherId, $selectedExamId);
+
+$batches = $gradingView['batches'];
+$exams = $gradingView['exams'];
+$studentsToGrade = $gradingView['studentsToGrade'];
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -21,7 +43,7 @@
             <span class="nav_icon" title="Search">🔍</span>
             <a href="teacher_profile.php" class="teacher_profile_btn">
                 <span>👨‍🏫</span>
-                <span class="teacher_name">Prof. Karim ▾</span>
+                <span class="teacher_name"><?= htmlspecialchars($teacherName, ENT_QUOTES, 'UTF-8'); ?> ▾</span>
             </a>
         </div>
     </header>
@@ -47,89 +69,84 @@
             <div class="page_header">
                 <div>
                     <h1>Enter Exam Results</h1>
-                    <p>Select exam and batch to enter or update students marks.</p>
+                    <p>Select an exam to input or update students marks directly into the database.</p>
                 </div>
             </div>
+
+            <?php if ($message !== ''): ?>
+                <p style="padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; background: <?= $messageType === 'success' ? '#dcfce7' : '#fee2e2'; ?>; color: <?= $messageType === 'success' ? '#166534' : '#991b1b'; ?>;">
+                    <?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?>
+                </p>
+            <?php endif; ?>
 
             <!-- CONTROLS BAR -->
-            <div class="results_controls">
+            <form method="get" class="results_controls">
                 <div class="control_group">
-                    <label>Select Exam</label>
-                    <select>
-                        <option value="Monthly Assessment">Monthly Math Assessment (50 Marks)</option>
-                        <option value="Term Final">Term Final Examination (100 Marks)</option>
+                    <label>Select Exam to Grade</label>
+                    <select name="exam_id" onchange="this.form.submit()">
+                        <option value="">-- Choose Exam --</option>
+                        <?php foreach ($exams as $ex): ?>
+                            <option value="<?= (int)$ex['id']; ?>" <?= $selectedExamId === (int)$ex['id'] ? 'selected' : ''; ?>>
+                                <?= htmlspecialchars($ex['name'] . ' (' . $ex['batch_name'] . ' - ' . (int)$ex['total_marks'] . ' pts)', ENT_QUOTES, 'UTF-8'); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="control_group">
-                    <label>Select Batch</label>
-                    <select>
-                        <option value="Batch A">Batch A (HSC 2026)</option>
-                        <option value="Batch C">Batch C (Special Math)</option>
-                    </select>
-                </div>
-                <button class="action_btn" style="height:42px;"><span>🔄</span> Load Marksheet</button>
-            </div>
+            </form>
 
             <!-- MARKSHEET TABLE CARD -->
-            <div class="marksheet_card">
+            <div class="marksheet_card" style="margin-top: 24px;">
                 <div class="marksheet_header">
-                    <h3>Marksheet: Monthly Math Assessment (Total: 50 Marks)</h3>
-                    <span class="badge">Higher Math</span>
+                    <h3>Exam Marksheet</h3>
                 </div>
 
-                <div class="table_container">
-                    <table class="custom_table">
-                        <thead>
-                            <tr>
-                                <th>Roll / ID</th>
-                                <th>Student Name</th>
-                                <th>Max Marks</th>
-                                <th>Marks Obtained</th>
-                                <th>Teacher's Remarks</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>#101</td>
-                                <td><strong>Rahim Ahmed</strong></td>
-                                <td>50</td>
-                                <td>
-                                    <input type="number" class="marks_input" value="45" max="50" min="0">
-                                </td>
-                                <td>
-                                    <input type="text" class="remarks_input" value="Excellent in calculus" placeholder="Add remarks...">
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>#102</td>
-                                <td><strong>Karim Khan</strong></td>
-                                <td>50</td>
-                                <td>
-                                    <input type="number" class="marks_input" value="38" max="50" min="0">
-                                </td>
-                                <td>
-                                    <input type="text" class="remarks_input" value="Good attempt" placeholder="Add remarks...">
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>#103</td>
-                                <td><strong>Sakib Hasan</strong></td>
-                                <td>50</td>
-                                <td>
-                                    <input type="number" class="marks_input" value="22" max="50" min="0">
-                                </td>
-                                <td>
-                                    <input type="text" class="remarks_input" value="Needs improvement in vectors" placeholder="Add remarks...">
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <form method="post">
+                    <input type="hidden" name="save_marks" value="1">
+                    <input type="hidden" name="exam_id" value="<?= $selectedExamId; ?>">
 
-                <!-- SAVE BAR -->
-                <div class="save_bar">
-                    <button class="action_btn" onclick="alert('Results saved successfully!')">💾 Submit & Save Results</button>
-                </div>
+                    <div class="table_container">
+                        <table class="custom_table">
+                            <thead>
+                                <tr>
+                                    <th>Roll / ID</th>
+                                    <th>Student Name</th>
+                                    <th>Max Marks</th>
+                                    <th>Marks Obtained</th>
+                                    <th>Current Grade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if ($selectedExamId === 0): ?>
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; color: #6b7280; padding: 24px;">Please select an exam from the dropdown above to load the student list.</td>
+                                    </tr>
+                                <?php elseif (empty($studentsToGrade)): ?>
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; color: #6b7280; padding: 24px;">No students enrolled in this exam's batch.</td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($studentsToGrade as $s): ?>
+                                        <tr>
+                                            <td>#<?= (int)$s['id']; ?> (Roll: <?= htmlspecialchars($s['roll'], ENT_QUOTES, 'UTF-8'); ?>)</td>
+                                            <td><strong><?= htmlspecialchars($s['name'], ENT_QUOTES, 'UTF-8'); ?></strong></td>
+                                            <td><?= (float)$s['total_marks']; ?></td>
+                                            <td>
+                                                <input type="number" name="marks[<?= (int)$s['id']; ?>]" value="<?= $s['marks'] !== null ? (float)$s['marks'] : ''; ?>" min="0" max="<?= (float)$s['total_marks']; ?>" step="0.5" style="width: 90px; padding: 6px; border: 1px solid #d1d5db; border-radius: 6px;" placeholder="Marks">
+                                            </td>
+                                            <td><strong><?= htmlspecialchars($s['grade'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></strong></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <?php if (!empty($studentsToGrade)): ?>
+                        <div class="save_bar" style="padding: 16px; border-top: 1px solid #e5e7eb; text-align: right;">
+                            <button type="submit" class="action_btn" style="background:#4f46e5; color:#fff; border:none; padding:10px 20px; border-radius:8px; font-weight:600; cursor:pointer;">💾 Submit & Save Results</button>
+                        </div>
+                    <?php endif; ?>
+                </form>
             </div>
         </main>
     </div>
@@ -143,6 +160,14 @@
                 sidebar.classList.toggle('mobile_open');
             } else {
                 sidebar.classList.toggle('collapsed');
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile_open')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile_open');
+                }
             }
         });
     </script>

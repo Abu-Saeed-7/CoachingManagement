@@ -1,3 +1,22 @@
+<?php
+require_once __DIR__ . '/../../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../../backend/controllers/AttendanceController.php';
+
+checkAuth(['student', 'admin']);
+
+$student = getCurrentStudentSession();
+$studentId = $student['id'];
+$studentName = $student['name'];
+
+$attendanceController = new AttendanceController();
+$history = $attendanceController->getStudentAttendanceHistory((int) $studentId);
+
+$totalClasses = $history['totalClasses'];
+$attended = $history['attendedClasses'] + $history['lateClasses'];
+$absences = $history['absentClasses'];
+$percentage = $history['overallPercentage'];
+$logs = $history['attendanceRecords'];
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -20,7 +39,7 @@
             <span class="nav_icon" title="Notifications">🔔</span>
             <a href="student_profile.php" class="student_profile_btn">
                 <span>🎓</span>
-                <span class="student_name">Rahim Ahmed ▾</span>
+                <span class="student_name"><?= htmlspecialchars($studentName, ENT_QUOTES, 'UTF-8'); ?> ▾</span>
             </a>
         </div>
     </header>
@@ -51,30 +70,26 @@
             <div class="att_summary_row">
                 <div class="att_stat_box">
                     <h4>Total Classes</h4>
-                    <p class="number">24</p>
+                    <p class="number"><?= $totalClasses; ?></p>
                 </div>
                 <div class="att_stat_box">
                     <h4>Classes Attended</h4>
-                    <p class="number present">22 Days</p>
+                    <p class="number present"><?= $attended; ?> Days</p>
                 </div>
                 <div class="att_stat_box">
                     <h4>Absences</h4>
-                    <p class="number absent">2 Days</p>
+                    <p class="number absent"><?= $absences; ?> Days</p>
                 </div>
                 <div class="att_stat_box">
                     <h4>Attendance Percentage</h4>
-                    <p class="number" style="color:#4d38c4;">91.6%</p>
+                    <p class="number" style="color:<?= $percentage >= 75 ? '#10b981' : '#f59e0b'; ?>;"><?= $percentage; ?>%</p>
                 </div>
             </div>
 
-            <!-- ATTENDANCE LOG TABLE (STEP 5.3) -->
+            <!-- ATTENDANCE LOG TABLE -->
             <div class="attendance_table_card">
                 <div class="card_header">
                     <h3>Detailed Attendance Log</h3>
-                    <select class="filter_select">
-                        <option value="August">August 2026</option>
-                        <option value="July">July 2026</option>
-                    </select>
                 </div>
 
                 <div class="table_container">
@@ -83,47 +98,29 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Day</th>
-                                <th>Subject</th>
-                                <th>Teacher</th>
+                                <th>Enrolled Batch</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>01 Sep 2026</td>
-                                <td>Tuesday</td>
-                                <td>Higher Mathematics</td>
-                                <td>Prof. Abdul Karim</td>
-                                <td><span class="status_p">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>30 Aug 2026</td>
-                                <td>Sunday</td>
-                                <td>Physics</td>
-                                <td>Dr. Nusrat Jahan</td>
-                                <td><span class="status_p">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>28 Aug 2026</td>
-                                <td>Friday</td>
-                                <td>Chemistry</td>
-                                <td>Mohammad Ali</td>
-                                <td><span class="status_p">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>25 Aug 2026</td>
-                                <td>Tuesday</td>
-                                <td>Higher Mathematics</td>
-                                <td>Prof. Abdul Karim</td>
-                                <td><span class="status_a">Absent</span></td>
-                            </tr>
-                            <tr>
-                                <td>23 Aug 2026</td>
-                                <td>Sunday</td>
-                                <td>Physics</td>
-                                <td>Dr. Nusrat Jahan</td>
-                                <td><span class="status_p">Present</span></td>
-                            </tr>
+                            <?php if (empty($logs)): ?>
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: #6b7280; padding: 24px;">No attendance records found.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($logs as $l): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars(date('d M, Y', strtotime($l['date'])), ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars(date('l', strtotime($l['date'])), ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($l['batch_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td>
+                                            <span class="<?= $l['status'] === 'present' ? 'status_active' : 'status_inactive'; ?>">
+                                                <?= htmlspecialchars(ucfirst($l['status']), ENT_QUOTES, 'UTF-8'); ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -140,6 +137,14 @@
                 sidebar.classList.toggle('mobile_open');
             } else {
                 sidebar.classList.toggle('collapsed');
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile_open')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile_open');
+                }
             }
         });
     </script>

@@ -1,3 +1,28 @@
+<?php
+require_once __DIR__ . '/../../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../../backend/controllers/FeeController.php';
+
+checkAuth(['student', 'admin']);
+
+$student = getCurrentStudentSession();
+$studentId = $student['id'];
+$studentName = $student['name'];
+
+$feeController = new FeeController();
+$feeData = $feeController->getStudentFees((int) $studentId);
+
+$totalPaid = $feeData['totalPaid'];
+$totalDue = $feeData['totalDue'];
+$fees = $feeData['fees'];
+
+$lastPaymentDate = '--';
+foreach ($fees as $f) {
+    if ($f['status'] === 'paid' && !empty($f['payment_date'])) {
+        $lastPaymentDate = date('d M, Y', strtotime($f['payment_date']));
+        break;
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -20,7 +45,7 @@
             <span class="nav_icon" title="Notifications">🔔</span>
             <a href="student_profile.php" class="student_profile_btn">
                 <span>🎓</span>
-                <span class="student_name">Rahim Ahmed ▾</span>
+                <span class="student_name"><?= htmlspecialchars($studentName, ENT_QUOTES, 'UTF-8'); ?> ▾</span>
             </a>
         </div>
     </header>
@@ -50,27 +75,23 @@
             <!-- SUMMARY STATS -->
             <div class="fee_summary_row">
                 <div class="fee_stat_box">
-                    <h4>Monthly Tuition Fee</h4>
-                    <p class="number">৳ 1,500</p>
-                </div>
-                <div class="fee_stat_box">
-                    <h4>Last Payment (August)</h4>
-                    <p class="number paid">Paid (৳ 1,500)</p>
+                    <h4>Last Payment</h4>
+                    <p class="number" style="color: #4f46e5;"><?= $lastPaymentDate; ?></p>
                 </div>
                 <div class="fee_stat_box">
                     <h4>Total Paid to Date</h4>
-                    <p class="number" style="color:#4d38c4;">৳ 12,000</p>
+                    <p class="number" style="color:#10b981;">৳ <?= number_format($totalPaid, 0); ?></p>
                 </div>
                 <div class="fee_stat_box">
                     <h4>Outstanding Dues</h4>
-                    <p class="number due">৳ 0.00</p>
+                    <p class="number due" style="color:<?= $totalDue > 0 ? '#ef4444' : '#10b981'; ?>;">৳ <?= number_format($totalDue, 0); ?></p>
                 </div>
             </div>
 
-            <!-- FEES TABLE (STEP 5.5) -->
+            <!-- FEES TABLE -->
             <div class="fees_table_card">
                 <div class="card_header">
-                    <h3>Payment History</h3>
+                    <h3>Payment History & Invoices</h3>
                 </div>
 
                 <div class="table_container">
@@ -78,42 +99,32 @@
                         <thead>
                             <tr>
                                 <th>Invoice No</th>
-                                <th>Month</th>
+                                <th>Billing Month</th>
                                 <th>Amount</th>
                                 <th>Payment Date</th>
-                                <th>Method</th>
                                 <th>Status</th>
-                                <th>Receipt</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>#INV-081</td>
-                                <td>August 2026</td>
-                                <td><strong>৳ 1,500</strong></td>
-                                <td>05 Aug 2026</td>
-                                <td>bKash</td>
-                                <td><span class="status_paid">Paid</span></td>
-                                <td><button class="btn_receipt" onclick="alert('Downloading Receipt #INV-081...')">🖨️ Download</button></td>
-                            </tr>
-                            <tr>
-                                <td>#INV-071</td>
-                                <td>July 2026</td>
-                                <td><strong>৳ 1,500</strong></td>
-                                <td>06 Jul 2026</td>
-                                <td>Cash</td>
-                                <td><span class="status_paid">Paid</span></td>
-                                <td><button class="btn_receipt" onclick="alert('Downloading Receipt #INV-071...')">🖨️ Download</button></td>
-                            </tr>
-                            <tr>
-                                <td>#INV-061</td>
-                                <td>June 2026</td>
-                                <td><strong>৳ 1,500</strong></td>
-                                <td>04 Jun 2026</td>
-                                <td>bKash</td>
-                                <td><span class="status_paid">Paid</span></td>
-                                <td><button class="btn_receipt" onclick="alert('Downloading Receipt #INV-061...')">🖨️ Download</button></td>
-                            </tr>
+                            <?php if (empty($fees)): ?>
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: #6b7280; padding: 24px;">No fee records found.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($fees as $fee): ?>
+                                    <tr>
+                                        <td>#INV-<?= str_pad((string)$fee['id'], 4, '0', STR_PAD_LEFT); ?></td>
+                                        <td><?= htmlspecialchars(date('F Y', strtotime($fee['month'])), ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><strong>৳ <?= number_format((float)$fee['amount'], 0); ?></strong></td>
+                                        <td><?= $fee['payment_date'] ? htmlspecialchars(date('d M, Y', strtotime($fee['payment_date'])), ENT_QUOTES, 'UTF-8') : '—'; ?></td>
+                                        <td>
+                                            <span class="<?= $fee['status'] === 'paid' ? 'status_active' : 'status_inactive'; ?>">
+                                                <?= htmlspecialchars(ucfirst($fee['status']), ENT_QUOTES, 'UTF-8'); ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -130,6 +141,14 @@
                 sidebar.classList.toggle('mobile_open');
             } else {
                 sidebar.classList.toggle('collapsed');
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile_open')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile_open');
+                }
             }
         });
     </script>

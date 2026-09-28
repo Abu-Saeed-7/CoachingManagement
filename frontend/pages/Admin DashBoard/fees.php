@@ -1,3 +1,22 @@
+<?php
+require_once __DIR__ . '/../../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../../backend/controllers/FeeController.php';
+
+checkAuth(['admin']);
+
+$feeController = new FeeController();
+$postResult = $feeController->handleAddFee();
+$message = $postResult['message'];
+$messageType = $postResult['messageType'];
+
+$stats = $feeController->getFeeStats();
+$totalCollected = $stats['totalCollected'];
+$pendingDues = $stats['pendingDues'];
+$totalInvoices = $stats['totalInvoices'];
+
+$students = $feeController->getStudentsDropdown();
+$fees = $feeController->getAllFees();
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -57,90 +76,75 @@
             <!-- MINI STATS SUMMARY ROW -->
             <div class="fee_stats_row">
                 <div class="fee_stat_box">
-                    <h4>Total Collected (This Month)</h4>
-                    <p class="amount collected">৳ 1,25,000</p>
+                    <h4>Total Collected</h4>
+                    <p class="amount collected">৳ <?= number_format($totalCollected, 0); ?></p>
                 </div>
                 <div class="fee_stat_box">
                     <h4>Pending Dues (Unpaid)</h4>
-                    <p class="amount pending">৳ 22,500</p>
+                    <p class="amount pending">৳ <?= number_format($pendingDues, 0); ?></p>
                 </div>
                 <div class="fee_stat_box">
                     <h4>Total Fee Records</h4>
-                    <p class="amount">120 Invoices</p>
+                    <p class="amount"><?= $totalInvoices; ?> Invoices</p>
                 </div>
             </div>
 
             <!-- সার্চ ও ফিল্টার বার -->
             <div class="table_controls">
-                <input type="text" class="search_input" placeholder="🔍 Search student name or invoice...">
-                <select class="filter_select">
-                    <option value="">All Batches</option>
-                    <option value="Batch A">Batch A</option>
-                    <option value="Batch B">Batch B</option>
-                    <option value="Batch C">Batch C</option>
-                </select>
-                <select class="filter_select">
-                    <option value="">Payment Status</option>
+                <input type="text" id="searchInput" class="search_input" placeholder="🔍 Search student name or roll...">
+                <select id="statusFilter" class="filter_select">
+                    <option value="">All Payment Status</option>
                     <option value="Paid">Paid</option>
                     <option value="Unpaid">Unpaid</option>
+                    <option value="Partial">Partial</option>
                 </select>
             </div>
 
+            <?php if ($message !== ''): ?>
+                <p class="form_message <?= $messageType; ?>"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></p>
+            <?php endif; ?>
+
             <!-- ফিস টেবিল -->
             <div class="table_container">
-                <table class="custom_table">
+                <table class="custom_table" id="feesTable">
                     <thead>
                         <tr>
-                            <th>Invoice</th>
+                            <th>Invoice #</th>
                             <th>Student Name</th>
                             <th>Batch</th>
-                            <th>Month</th>
+                            <th>Billing Month</th>
                             <th>Amount</th>
-                            <th>Due Date</th>
+                            <th>Payment Date</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>#INV-081</td>
-                            <td><strong>Rahim Ahmed</strong></td>
-                            <td><span class="badge">Batch A</span></td>
-                            <td>August 2026</td>
-                            <td><strong>৳ 1,500</strong></td>
-                            <td>10 Aug 2026</td>
-                            <td><span class="status_paid">Paid</span></td>
-                            <td>
-                                <button class="btn_icon" title="Print Receipt">🖨️</button>
-                                <button class="btn_icon edit_btn" title="Edit">✏️</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#INV-082</td>
-                            <td><strong>Karim Khan</strong></td>
-                            <td><span class="badge">Batch B</span></td>
-                            <td>August 2026</td>
-                            <td><strong>৳ 1,500</strong></td>
-                            <td>10 Aug 2026</td>
-                            <td><span class="status_paid">Paid</span></td>
-                            <td>
-                                <button class="btn_icon" title="Print Receipt">🖨️</button>
-                                <button class="btn_icon edit_btn" title="Edit">✏️</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#INV-083</td>
-                            <td><strong>Sakib Hasan</strong></td>
-                            <td><span class="badge">Batch A</span></td>
-                            <td>August 2026</td>
-                            <td><strong>৳ 1,500</strong></td>
-                            <td>10 Aug 2026</td>
-                            <td><span class="status_unpaid">Unpaid</span></td>
-                            <td>
-                                <button class="btn_pay">Collect</button>
-                                <button class="btn_icon edit_btn" title="Edit">✏️</button>
-                            </td>
-                        </tr>
+                        <?php if (empty($fees)): ?>
+                            <tr>
+                                <td colspan="8" style="text-align: center; color: #6b7280; padding: 24px;">No fee records found. Click "Collect / Add Fee" above to create an invoice.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($fees as $fee): ?>
+                                <tr>
+                                    <td>#INV-<?= str_pad((string)$fee['id'], 4, '0', STR_PAD_LEFT); ?></td>
+                                    <td><strong><?= htmlspecialchars($fee['student_name'], ENT_QUOTES, 'UTF-8'); ?></strong> (Roll: <?= htmlspecialchars($fee['roll'], ENT_QUOTES, 'UTF-8'); ?>)</td>
+                                    <td><span class="badge"><?= htmlspecialchars($fee['batch_name'], ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                    <td><?= htmlspecialchars(date('F Y', strtotime($fee['month'])), ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td><strong>৳ <?= number_format((float) $fee['amount'], 0); ?></strong></td>
+                                    <td><?= htmlspecialchars($fee['payment_date'] ? date('d M, Y', strtotime($fee['payment_date'])) : '—', ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td>
+                                        <span class="<?= $fee['status'] === 'paid' ? 'status_active' : 'status_inactive'; ?>">
+                                            <?= htmlspecialchars(ucfirst($fee['status']), ENT_QUOTES, 'UTF-8'); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn_icon edit_btn" title="Edit" type="button">✏️</button>
+                                        <button class="btn_icon delete_btn" title="Delete" type="button">🗑️</button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -154,45 +158,40 @@
                 <h3>Collect / Record Student Fee</h3>
                 <button class="close_modal" id="closeModal">&times;</button>
             </div>
-            <form class="modal_form">
+            <form class="modal_form" method="post">
                 <div class="form_group">
                     <label>Select Student</label>
-                    <select required>
+                    <select name="student_id" required>
                         <option value="">Select Student</option>
-                        <option value="101">Rahim Ahmed (#101 - Batch A)</option>
-                        <option value="102">Karim Khan (#102 - Batch B)</option>
-                        <option value="103">Sakib Hasan (#103 - Batch A)</option>
+                        <?php foreach ($students as $student): ?>
+                            <option value="<?= (int) $student['id']; ?>" <?= ((int)($_POST['student_id'] ?? 0) === (int)$student['id']) ? 'selected' : ''; ?>>
+                                <?= htmlspecialchars($student['name'] . ' (Roll: ' . $student['roll'] . ')', ENT_QUOTES, 'UTF-8'); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="form_row">
                     <div class="form_group">
                         <label>Fee Month</label>
-                        <select required>
-                            <option value="August 2026">August 2026</option>
-                            <option value="September 2026">September 2026</option>
-                            <option value="October 2026">October 2026</option>
-                        </select>
+                        <input type="month" name="month" value="<?= htmlspecialchars($_POST['month'] ?? date('Y-m'), ENT_QUOTES, 'UTF-8'); ?>" required>
                     </div>
                     <div class="form_group">
                         <label>Fee Amount (BDT)</label>
-                        <input type="number" placeholder="1500" min="0" required>
+                        <input type="number" name="amount" value="<?= htmlspecialchars($_POST['amount'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. 3000" min="1" max="500000" step="any" required>
                     </div>
                 </div>
                 <div class="form_row">
                     <div class="form_group">
-                        <label>Payment Method</label>
-                        <select required>
-                            <option value="Cash">Cash</option>
-                            <option value="bKash / Nagad">bKash / Nagad</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
+                        <label>Payment Status</label>
+                        <select name="status" required>
+                            <option value="paid" <?= (($_POST['status'] ?? 'paid') === 'paid') ? 'selected' : ''; ?>>Paid</option>
+                            <option value="unpaid" <?= (($_POST['status'] ?? '') === 'unpaid') ? 'selected' : ''; ?>>Unpaid / Due</option>
+                            <option value="partial" <?= (($_POST['status'] ?? '') === 'partial') ? 'selected' : ''; ?>>Partial</option>
                         </select>
                     </div>
                     <div class="form_group">
-                        <label>Payment Status</label>
-                        <select required>
-                            <option value="Paid">Paid</option>
-                            <option value="Unpaid">Unpaid / Due</option>
-                        </select>
+                        <label>Payment Date</label>
+                        <input type="date" name="payment_date" value="<?= htmlspecialchars($_POST['payment_date'] ?? date('Y-m-d'), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                 </div>
                 <div class="modal_buttons">
@@ -216,6 +215,14 @@
             }
         });
 
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile_open')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile_open');
+                }
+            }
+        });
+
         // Modal Open / Close
         const openAddModal = document.getElementById('openAddModal');
         const closeModal = document.getElementById('closeModal');
@@ -225,6 +232,33 @@
         openAddModal.addEventListener('click', () => feeModal.classList.add('show'));
         closeModal.addEventListener('click', () => feeModal.classList.remove('show'));
         cancelModal.addEventListener('click', () => feeModal.classList.remove('show'));
+        feeModal.addEventListener('click', (e) => {
+            if (e.target === feeModal) feeModal.classList.remove('show');
+        });
+
+        <?php if ($messageType === 'error'): ?>
+        feeModal.classList.add('show');
+        <?php endif; ?>
+
+        // Search & Filter
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+
+        function filterTable() {
+            const term = searchInput.value.toLowerCase();
+            const status = statusFilter.value.toLowerCase();
+            const rows = document.querySelectorAll('#feesTable tbody tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const matchesSearch = text.includes(term);
+                const matchesStatus = !status || text.includes(status);
+                row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+            });
+        }
+
+        if (searchInput) searchInput.addEventListener('keyup', filterTable);
+        if (statusFilter) statusFilter.addEventListener('change', filterTable);
     </script>
 </body>
 

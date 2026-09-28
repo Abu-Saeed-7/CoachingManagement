@@ -1,3 +1,18 @@
+<?php
+require_once __DIR__ . '/../../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../../backend/controllers/ExamController.php';
+
+checkAuth(['admin']);
+
+$examController = new ExamController();
+$postResult = $examController->handleAddExam();
+$message = $postResult['message'];
+$messageType = $postResult['messageType'];
+
+$batches = $examController->getActiveBatches();
+$subjects = $examController->getActiveSubjects();
+$exams = $examController->getAllExams();
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -56,75 +71,65 @@
 
             <!-- সার্চ ও ফিল্টার বার -->
             <div class="table_controls">
-                <input type="text" class="search_input" placeholder="🔍 Search exam name or subject...">
-                <select class="filter_select">
+                <input type="text" id="searchInput" class="search_input" placeholder="🔍 Search exam name or subject...">
+                <select id="batchFilter" class="filter_select">
                     <option value="">All Batches</option>
-                    <option value="Batch A">Batch A</option>
-                    <option value="Batch B">Batch B</option>
-                    <option value="Batch C">Batch C</option>
+                    <?php foreach ($batches as $batch): ?>
+                        <option value="<?= htmlspecialchars($batch['name'], ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($batch['name'], ENT_QUOTES, 'UTF-8'); ?></option>
+                    <?php endforeach; ?>
                 </select>
-                <select class="filter_select">
+                <select id="statusFilter" class="filter_select">
                     <option value="">All Status</option>
                     <option value="Upcoming">Upcoming</option>
                     <option value="Completed">Completed</option>
                 </select>
             </div>
 
+            <?php if ($message !== ''): ?>
+                <p class="form_message <?= $messageType; ?>"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></p>
+            <?php endif; ?>
+
             <!-- এক্সাম টেবিল -->
             <div class="table_container">
-                <table class="custom_table">
+                <table class="custom_table" id="examsTable">
                     <thead>
                         <tr>
                             <th>Exam ID</th>
                             <th>Exam Name</th>
                             <th>Subject</th>
                             <th>Batch</th>
-                            <th>Date & Time</th>
+                            <th>Date</th>
                             <th>Total Marks</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>#E01</td>
-                            <td><strong>Monthly Assessment</strong></td>
-                            <td>Physics</td>
-                            <td><span class="badge">Batch A</span></td>
-                            <td>📅 25 Aug 2026 (10:00 AM)</td>
-                            <td><span class="marks_badge">50 Marks</span></td>
-                            <td><span class="status_upcoming">Upcoming</span></td>
-                            <td>
-                                <button class="btn_icon edit_btn" title="Edit">✏️</button>
-                                <button class="btn_icon delete_btn" title="Delete">🗑️</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#E02</td>
-                            <td><strong>Term Final Examination</strong></td>
-                            <td>Mathematics</td>
-                            <td><span class="badge">Batch A & B</span></td>
-                            <td>📅 30 Aug 2026 (11:00 AM)</td>
-                            <td><span class="marks_badge">100 Marks</span></td>
-                            <td><span class="status_upcoming">Upcoming</span></td>
-                            <td>
-                                <button class="btn_icon edit_btn" title="Edit">✏️</button>
-                                <button class="btn_icon delete_btn" title="Delete">🗑️</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#E03</td>
-                            <td><strong>Quiz 01 (Periodic Table)</strong></td>
-                            <td>Chemistry</td>
-                            <td><span class="badge">Batch B</span></td>
-                            <td>📅 15 Aug 2026 (04:00 PM)</td>
-                            <td><span class="marks_badge">25 Marks</span></td>
-                            <td><span class="status_completed">Completed</span></td>
-                            <td>
-                                <button class="btn_icon edit_btn" title="Edit">✏️</button>
-                                <button class="btn_icon delete_btn" title="Delete">🗑️</button>
-                            </td>
-                        </tr>
+                        <?php if (empty($exams)): ?>
+                            <tr>
+                                <td colspan="8" style="text-align: center; color: #6b7280; padding: 24px;">No exams scheduled yet. Click "Create New Exam" above to schedule one.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($exams as $exam): ?>
+                                <tr>
+                                    <td>#E<?= (int) $exam['id']; ?></td>
+                                    <td><strong><?= htmlspecialchars($exam['name'], ENT_QUOTES, 'UTF-8'); ?></strong></td>
+                                    <td><?= htmlspecialchars($exam['subject_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td><span class="badge"><?= htmlspecialchars($exam['batch_name'], ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                    <td><?= htmlspecialchars($exam['exam_date'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td><?= htmlspecialchars(number_format((float) $exam['total_marks'], 0), ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td>
+                                        <span class="<?= $exam['status'] === 'Upcoming' ? 'status_active' : 'status_inactive'; ?>">
+                                            <?= htmlspecialchars($exam['status'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn_icon edit_btn" title="Edit" type="button">✏️</button>
+                                        <button class="btn_icon delete_btn" title="Delete" type="button">🗑️</button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -138,50 +143,43 @@
                 <h3>Schedule New Exam</h3>
                 <button class="close_modal" id="closeModal">&times;</button>
             </div>
-            <form class="modal_form">
+            <form class="modal_form" method="post">
                 <div class="form_group">
                     <label>Exam Title / Name</label>
-                    <input type="text" placeholder="e.g. Monthly Physics Assessment" required>
+                    <input type="text" name="name" value="<?= htmlspecialchars($_POST['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. Monthly Physics Assessment" minlength="2" maxlength="100" required>
                 </div>
                 <div class="form_row">
                     <div class="form_group">
                         <label>Subject</label>
-                        <select required>
+                        <select name="subject_id" required>
                             <option value="">Select Subject</option>
-                            <option value="Physics">Physics</option>
-                            <option value="Mathematics">Mathematics</option>
-                            <option value="Chemistry">Chemistry</option>
-                            <option value="English">English</option>
+                            <?php foreach ($subjects as $subject): ?>
+                                <option value="<?= (int) $subject['id']; ?>" <?= ((int)($_POST['subject_id'] ?? 0) === (int)$subject['id']) ? 'selected' : ''; ?>>
+                                    <?= htmlspecialchars($subject['name'], ENT_QUOTES, 'UTF-8'); ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form_group">
                         <label>Target Batch</label>
-                        <select required>
+                        <select name="batch_id" required>
                             <option value="">Select Batch</option>
-                            <option value="Batch A">Batch A</option>
-                            <option value="Batch B">Batch B</option>
-                            <option value="Batch C">Batch C</option>
+                            <?php foreach ($batches as $batch): ?>
+                                <option value="<?= (int) $batch['id']; ?>" <?= ((int)($_POST['batch_id'] ?? 0) === (int)$batch['id']) ? 'selected' : ''; ?>>
+                                    <?= htmlspecialchars($batch['name'], ENT_QUOTES, 'UTF-8'); ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
                 <div class="form_row">
                     <div class="form_group">
                         <label>Exam Date</label>
-                        <input type="date" required>
+                        <input type="date" name="exam_date" value="<?= htmlspecialchars($_POST['exam_date'] ?? date('Y-m-d'), ENT_QUOTES, 'UTF-8'); ?>" required>
                     </div>
-                    <div class="form_group">
-                        <label>Start Time</label>
-                        <input type="time" required>
-                    </div>
-                </div>
-                <div class="form_row">
                     <div class="form_group">
                         <label>Total Marks</label>
-                        <input type="number" placeholder="100" min="1" required>
-                    </div>
-                    <div class="form_group">
-                        <label>Passing Marks</label>
-                        <input type="number" placeholder="40" min="1" required>
+                        <input type="number" name="total_marks" value="<?= htmlspecialchars($_POST['total_marks'] ?? '100', ENT_QUOTES, 'UTF-8'); ?>" placeholder="100" min="1" max="1000" step="0.5" required>
                     </div>
                 </div>
                 <div class="modal_buttons">
@@ -205,6 +203,14 @@
             }
         });
 
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile_open')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile_open');
+                }
+            }
+        });
+
         // Modal Open / Close
         const openAddModal = document.getElementById('openAddModal');
         const closeModal = document.getElementById('closeModal');
@@ -214,6 +220,37 @@
         openAddModal.addEventListener('click', () => examModal.classList.add('show'));
         closeModal.addEventListener('click', () => examModal.classList.remove('show'));
         cancelModal.addEventListener('click', () => examModal.classList.remove('show'));
+        examModal.addEventListener('click', (e) => {
+            if (e.target === examModal) examModal.classList.remove('show');
+        });
+
+        <?php if ($messageType === 'error'): ?>
+        examModal.classList.add('show');
+        <?php endif; ?>
+
+        // Table Search & Filter
+        const searchInput = document.getElementById('searchInput');
+        const batchFilter = document.getElementById('batchFilter');
+        const statusFilter = document.getElementById('statusFilter');
+
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedBatch = batchFilter.value.toLowerCase();
+            const selectedStatus = statusFilter.value.toLowerCase();
+            const rows = document.querySelectorAll('#examsTable tbody tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const matchesSearch = text.includes(searchTerm);
+                const matchesBatch = !selectedBatch || text.includes(selectedBatch);
+                const matchesStatus = !selectedStatus || text.includes(selectedStatus);
+                row.style.display = (matchesSearch && matchesBatch && matchesStatus) ? '' : 'none';
+            });
+        }
+
+        if (searchInput) searchInput.addEventListener('keyup', filterTable);
+        if (batchFilter) batchFilter.addEventListener('change', filterTable);
+        if (statusFilter) statusFilter.addEventListener('change', filterTable);
     </script>
 </body>
 

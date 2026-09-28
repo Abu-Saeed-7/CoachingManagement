@@ -1,3 +1,21 @@
+<?php
+require_once __DIR__ . '/../../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../../backend/controllers/ResultController.php';
+require_once __DIR__ . '/../../../backend/controllers/BatchController.php';
+
+checkAuth(['admin']);
+
+$resultController = new ResultController();
+$batchController = new BatchController();
+$postResult = $resultController->handleAddResult();
+$message = $postResult['message'];
+$messageType = $postResult['messageType'];
+
+$exams = $resultController->getExamsDropdown();
+$students = $resultController->getStudentsDropdown();
+$batches = $batchController->getAllBatches();
+$results = $resultController->getAllResults();
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -54,26 +72,24 @@
                 <button class="action_btn" id="openAddModal"><span>+</span> Enter New Result</button>
             </div>
 
-            <!-- সার্চ ও ফিল্টার বার (Select Batch -> Select Exam) -->
+            <!-- সার্চ ও ফিল্টার বার -->
             <div class="table_controls">
-                <input type="text" class="search_input" placeholder="🔍 Search student name or roll...">
-                <select class="filter_select">
-                    <option value="">Select Batch</option>
-                    <option value="Batch A">Batch A</option>
-                    <option value="Batch B">Batch B</option>
-                    <option value="Batch C">Batch C</option>
-                </select>
-                <select class="filter_select">
-                    <option value="">Select Exam</option>
-                    <option value="Monthly Assessment">Monthly Assessment (Physics)</option>
-                    <option value="Term Final Examination">Term Final Examination (Math)</option>
-                    <option value="Quiz 01">Quiz 01 (Chemistry)</option>
+                <input type="text" id="searchInput" class="search_input" placeholder="🔍 Search student name or roll...">
+                <select id="batchFilter" class="filter_select">
+                    <option value="">All Batches</option>
+                    <?php foreach ($batches as $batch): ?>
+                        <option value="<?= htmlspecialchars($batch['name'], ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($batch['name'], ENT_QUOTES, 'UTF-8'); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
 
+            <?php if ($message !== ''): ?>
+                <p class="form_message <?= $messageType; ?>"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></p>
+            <?php endif; ?>
+
             <!-- রেজাল্ট টেবিল -->
             <div class="table_container">
-                <table class="custom_table">
+                <table class="custom_table" id="resultsTable">
                     <thead>
                         <tr>
                             <th>Student ID</th>
@@ -87,45 +103,31 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>#101</td>
-                            <td><strong>Rahim Ahmed</strong></td>
-                            <td>Monthly Assessment (Physics)</td>
-                            <td><span class="badge">Batch A</span></td>
-                            <td><strong>45</strong> / 50</td>
-                            <td><span class="grade_badge">A+</span></td>
-                            <td><span class="status_pass">Passed</span></td>
-                            <td>
-                                <button class="btn_icon edit_btn" title="Edit Marks">✏️</button>
-                                <button class="btn_icon delete_btn" title="Delete">🗑️</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#102</td>
-                            <td><strong>Karim Khan</strong></td>
-                            <td>Monthly Assessment (Physics)</td>
-                            <td><span class="badge">Batch A</span></td>
-                            <td><strong>38</strong> / 50</td>
-                            <td><span class="grade_badge">A</span></td>
-                            <td><span class="status_pass">Passed</span></td>
-                            <td>
-                                <button class="btn_icon edit_btn" title="Edit Marks">✏️</button>
-                                <button class="btn_icon delete_btn" title="Delete">🗑️</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>#103</td>
-                            <td><strong>Sakib Hasan</strong></td>
-                            <td>Monthly Assessment (Physics)</td>
-                            <td><span class="badge">Batch A</span></td>
-                            <td><strong>18</strong> / 50</td>
-                            <td><span class="grade_badge">F</span></td>
-                            <td><span class="status_fail">Failed</span></td>
-                            <td>
-                                <button class="btn_icon edit_btn" title="Edit Marks">✏️</button>
-                                <button class="btn_icon delete_btn" title="Delete">🗑️</button>
-                            </td>
-                        </tr>
+                        <?php if (empty($results)): ?>
+                            <tr>
+                                <td colspan="8" style="text-align: center; color: #6b7280; padding: 24px;">No results recorded yet. Click "Enter New Result" above to add one.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($results as $res): ?>
+                                <tr>
+                                    <td>#<?= (int) $res['student_id']; ?> (Roll: <?= htmlspecialchars($res['roll'], ENT_QUOTES, 'UTF-8'); ?>)</td>
+                                    <td><strong><?= htmlspecialchars($res['student_name'], ENT_QUOTES, 'UTF-8'); ?></strong></td>
+                                    <td><?= htmlspecialchars($res['exam_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td><span class="badge"><?= htmlspecialchars($res['batch_name'], ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                    <td><?= htmlspecialchars(number_format((float) $res['marks'], 1), ENT_QUOTES, 'UTF-8'); ?> / <?= htmlspecialchars(number_format((float) $res['total_marks'], 0), ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td><strong><?= htmlspecialchars($res['grade'], ENT_QUOTES, 'UTF-8'); ?></strong></td>
+                                    <td>
+                                        <span class="<?= $res['status'] === 'Passed' ? 'status_active' : 'status_inactive'; ?>">
+                                            <?= htmlspecialchars($res['status'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn_icon edit_btn" title="Edit" type="button">✏️</button>
+                                        <button class="btn_icon delete_btn" title="Delete" type="button">🗑️</button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -139,47 +141,32 @@
                 <h3>Enter Student Result</h3>
                 <button class="close_modal" id="closeModal">&times;</button>
             </div>
-            <form class="modal_form">
+            <form class="modal_form" method="post">
                 <div class="form_group">
                     <label>Select Exam</label>
-                    <select required>
+                    <select name="exam_id" required>
                         <option value="">Select Exam</option>
-                        <option value="Monthly Assessment">Monthly Assessment (Physics)</option>
-                        <option value="Term Final Examination">Term Final Examination (Math)</option>
+                        <?php foreach ($exams as $exam): ?>
+                            <option value="<?= (int) $exam['id']; ?>" <?= ((int)($_POST['exam_id'] ?? 0) === (int)$exam['id']) ? 'selected' : ''; ?>>
+                                <?= htmlspecialchars($exam['name'] . ' (' . $exam['batch_name'] . ' - ' . (int)$exam['total_marks'] . ' marks)', ENT_QUOTES, 'UTF-8'); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="form_row">
-                    <div class="form_group">
-                        <label>Select Batch</label>
-                        <select required>
-                            <option value="">Select Batch</option>
-                            <option value="Batch A">Batch A</option>
-                            <option value="Batch B">Batch B</option>
-                        </select>
-                    </div>
-                    <div class="form_group">
-                        <label>Select Student</label>
-                        <select required>
-                            <option value="">Select Student</option>
-                            <option value="101">Rahim Ahmed (#101)</option>
-                            <option value="102">Karim Khan (#102)</option>
-                            <option value="103">Sakib Hasan (#103)</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form_row">
-                    <div class="form_group">
-                        <label>Marks Obtained</label>
-                        <input type="number" placeholder="e.g. 45" min="0" required>
-                    </div>
-                    <div class="form_group">
-                        <label>Total Marks</label>
-                        <input type="number" placeholder="50" min="1" required>
-                    </div>
+                <div class="form_group">
+                    <label>Select Student</label>
+                    <select name="student_id" required>
+                        <option value="">Select Student</option>
+                        <?php foreach ($students as $student): ?>
+                            <option value="<?= (int) $student['id']; ?>" <?= ((int)($_POST['student_id'] ?? 0) === (int)$student['id']) ? 'selected' : ''; ?>>
+                                <?= htmlspecialchars($student['name'] . ' (Roll: ' . $student['roll'] . ')', ENT_QUOTES, 'UTF-8'); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="form_group">
-                    <label>Remarks / Feedback (Optional)</label>
-                    <input type="text" placeholder="e.g. Excellent performance in optics">
+                    <label>Marks Obtained</label>
+                    <input type="number" name="marks" value="<?= htmlspecialchars($_POST['marks'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. 85" min="0" max="1000" step="0.5" required>
                 </div>
                 <div class="modal_buttons">
                     <button type="button" class="btn_cancel" id="cancelModal">Cancel</button>
@@ -202,6 +189,14 @@
             }
         });
 
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile_open')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile_open');
+                }
+            }
+        });
+
         // Modal Open / Close
         const openAddModal = document.getElementById('openAddModal');
         const closeModal = document.getElementById('closeModal');
@@ -211,6 +206,33 @@
         openAddModal.addEventListener('click', () => resultModal.classList.add('show'));
         closeModal.addEventListener('click', () => resultModal.classList.remove('show'));
         cancelModal.addEventListener('click', () => resultModal.classList.remove('show'));
+        resultModal.addEventListener('click', (e) => {
+            if (e.target === resultModal) resultModal.classList.remove('show');
+        });
+
+        <?php if ($messageType === 'error'): ?>
+        resultModal.classList.add('show');
+        <?php endif; ?>
+
+        // Search & Filter
+        const searchInput = document.getElementById('searchInput');
+        const batchFilter = document.getElementById('batchFilter');
+
+        function filterTable() {
+            const term = searchInput.value.toLowerCase();
+            const batch = batchFilter.value.toLowerCase();
+            const rows = document.querySelectorAll('#resultsTable tbody tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const matchesSearch = text.includes(term);
+                const matchesBatch = !batch || text.includes(batch);
+                row.style.display = (matchesSearch && matchesBatch) ? '' : 'none';
+            });
+        }
+
+        if (searchInput) searchInput.addEventListener('keyup', filterTable);
+        if (batchFilter) batchFilter.addEventListener('change', filterTable);
     </script>
 </body>
 

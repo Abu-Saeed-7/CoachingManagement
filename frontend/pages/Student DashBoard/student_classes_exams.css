@@ -204,3 +204,59 @@
     background-color: #fef3c7;
     color: #b45309;
 }
+
+/* ========================================================
+   RESPONSIVE DESIGN (Tablets, Laptops, Mobile)
+   ======================================================== */
+@media (max-width: 768px) {
+    .page_header {
+        margin-bottom: 16px;
+    }
+
+    .schedule_controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 14px;
+    }
+
+    .batch_filter_group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .batch_select {
+        width: 100%;
+    }
+
+    .schedule_tabs {
+        width: 100%;
+    }
+
+    .tab_btn {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+    }
+
+    .timetable_grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .section_card {
+        padding: 16px 12px;
+    }
+
+    .custom_table {
+        min-width: 550px;
+    }
+}
+
+@media (max-width: 480px) {
+    .custom_table th,
+    .custom_table td {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+}

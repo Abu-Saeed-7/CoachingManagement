@@ -1,3 +1,20 @@
+<?php
+require_once __DIR__ . '/../../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../../backend/controllers/BatchController.php';
+require_once __DIR__ . '/../../../backend/controllers/StudentController.php';
+
+checkAuth(['teacher', 'admin']);
+
+$teacher = getCurrentTeacherSession();
+$teacherId = $teacher['id'];
+$teacherName = $teacher['name'];
+
+$batchController = new BatchController();
+$studentController = new StudentController();
+
+$assignedBatches = $batchController->getTeacherBatches((int) $teacherId);
+$assignedStudents = $studentController->getTeacherStudents((int) $teacherId);
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -21,7 +38,7 @@
             <span class="nav_icon" title="Search">🔍</span>
             <a href="teacher_profile.php" class="teacher_profile_btn">
                 <span>👨‍🏫</span>
-                <span class="teacher_name">Prof. Karim ▾</span>
+                <span class="teacher_name"><?= htmlspecialchars($teacherName, ENT_QUOTES, 'UTF-8'); ?> ▾</span>
             </a>
         </div>
     </header>
@@ -51,89 +68,59 @@
                 </div>
             </div>
 
-            <!-- BATCH CARDS GRID (STEP 4.2) -->
+            <!-- BATCH CARDS GRID -->
             <div class="batch_cards_grid">
-                <!-- Batch 1 -->
-                <div class="batch_card">
-                    <div>
-                        <div class="batch_header">
-                            <div>
-                                <div class="batch_name">Batch A (HSC 2026)</div>
-                                <div class="batch_subject">Higher Mathematics</div>
+                <?php if (empty($assignedBatches)): ?>
+                    <p style="grid-column: 1 / -1; text-align: center; color: #6b7280; padding: 24px;">No batches assigned to you yet.</p>
+                <?php else: ?>
+                    <?php foreach ($assignedBatches as $batch): ?>
+                        <div class="batch_card" style="background:#fff; border-radius:10px; border:1px solid #e5e7eb; padding:20px; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <h3 style="font-size:18px; color:#111827; margin:0;"><?= htmlspecialchars($batch['name'], ENT_QUOTES, 'UTF-8'); ?></h3>
+                                <span class="status_active" style="background:#dcfce7; color:#15803d; font-size:11px; padding:3px 8px; border-radius:12px; font-weight:600;">
+                                    <?= htmlspecialchars(ucfirst($batch['status']), ENT_QUOTES, 'UTF-8'); ?>
+                                </span>
                             </div>
-                            <span class="badge">Active</span>
-                        </div>
-                        <ul class="batch_details">
-                            <li>👥 <strong>45 Students</strong> enrolled</li>
-                            <li>⏰ <strong>Mon, Wed, Fri</strong> (4:00 PM - 6:00 PM)</li>
-                            <li>📍 Room 302, Science Building</li>
-                        </ul>
-                    </div>
-                    <div class="batch_actions">
-                        <a href="teacher_attendance.php" class="action_btn" style="flex:1; justify-content:center;">Take Attendance</a>
-                        <a href="#batchStudents" class="btn_secondary">View Students</a>
-                    </div>
-                </div>
-
-                <!-- Batch 2 -->
-                <div class="batch_card">
-                    <div>
-                        <div class="batch_header">
-                            <div>
-                                <div class="batch_name">Batch C (Special Math)</div>
-                                <div class="batch_subject">Calculus & Geometry</div>
+                            <p style="color:#6b7280; font-size:13px; margin:0 0 16px 0;">Start Date: <strong><?= htmlspecialchars($batch['start_date'], ENT_QUOTES, 'UTF-8'); ?></strong></p>
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f3f4f6; padding-top:12px;">
+                                <span style="font-size:13px; font-weight:600; color:#4f46e5;">👥 <?= (int) $batch['student_count']; ?> Students</span>
+                                <a href="teacher_students.php?batch_id=<?= (int)$batch['id']; ?>" style="color:#4f46e5; text-decoration:none; font-size:13px; font-weight:600;">View Students &rarr;</a>
                             </div>
-                            <span class="badge">Active</span>
                         </div>
-                        <ul class="batch_details">
-                            <li>👥 <strong>25 Students</strong> enrolled</li>
-                            <li>⏰ <strong>Saturday</strong> (10:00 AM - 1:00 PM)</li>
-                            <li>📍 Room 104, Main Campus</li>
-                        </ul>
-                    </div>
-                    <div class="batch_actions">
-                        <a href="teacher_attendance.php" class="action_btn" style="flex:1; justify-content:center;">Take Attendance</a>
-                        <a href="#batchStudents" class="btn_secondary">View Students</a>
-                    </div>
-                </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
 
-            <!-- BATCH STUDENTS TABLE (STEP 4.3) -->
-            <div class="students_section" id="batchStudents">
-                <h3 class="section_title">Students in Batch A (HSC 2026)</h3>
+            <!-- BATCH STUDENTS TABLE -->
+            <div class="students_section" id="batchStudents" style="margin-top: 32px;">
+                <h3 class="section_title" style="font-size:18px; margin-bottom:16px;">Assigned Students Overview</h3>
                 <div class="table_container">
                     <table class="custom_table">
                         <thead>
                             <tr>
                                 <th>Roll / ID</th>
                                 <th>Student Name</th>
+                                <th>Batch</th>
                                 <th>Email</th>
                                 <th>Phone</th>
-                                <th>Attendance Rate</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>#101</td>
-                                <td><strong>Rahim Ahmed</strong></td>
-                                <td>rahim@gmail.com</td>
-                                <td>01711-XXXXXX</td>
-                                <td><span class="badge" style="background:#dcfce7; color:#15803d;">95% Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>#102</td>
-                                <td><strong>Karim Khan</strong></td>
-                                <td>karim@gmail.com</td>
-                                <td>01822-XXXXXX</td>
-                                <td><span class="badge" style="background:#dcfce7; color:#15803d;">88% Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>#103</td>
-                                <td><strong>Sakib Hasan</strong></td>
-                                <td>sakib@gmail.com</td>
-                                <td>01933-XXXXXX</td>
-                                <td><span class="badge" style="background:#fee2e2; color:#dc2626;">65% Present</span></td>
-                            </tr>
+                            <?php if (empty($assignedStudents)): ?>
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: #6b7280; padding: 24px;">No students assigned to your batches yet.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($assignedStudents as $s): ?>
+                                    <tr>
+                                        <td>#<?= (int) $s['id']; ?> (Roll: <?= htmlspecialchars($s['roll'], ENT_QUOTES, 'UTF-8'); ?>)</td>
+                                        <td><strong><?= htmlspecialchars($s['name'], ENT_QUOTES, 'UTF-8'); ?></strong></td>
+                                        <td><span class="badge" style="background:#eef2ff; color:#4f46e5; padding:3px 8px; border-radius:12px; font-size:12px;"><?= htmlspecialchars($s['batch_name'], ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                        <td><?= htmlspecialchars($s['email'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($s['phone'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -150,6 +137,14 @@
                 sidebar.classList.toggle('mobile_open');
             } else {
                 sidebar.classList.toggle('collapsed');
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile_open')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile_open');
+                }
             }
         });
     </script>

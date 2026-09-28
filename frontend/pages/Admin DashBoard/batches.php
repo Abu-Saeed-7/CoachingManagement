@@ -1,70 +1,16 @@
 <?php
-require_once __DIR__ . '/../../../backend/config/database.php';
+require_once __DIR__ . '/../../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../../backend/controllers/BatchController.php';
 
-$message = '';
-$messageType = 'success';
+checkAuth(['admin']);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = trim($_POST['name'] ?? '');
-    $startDate = $_POST['start_date'] ?? '';
-    $status = $_POST['status'] ?? '';
-    $teacherId = (int) ($_POST['teacher_id'] ?? 0);
+$batchController = new BatchController();
+$postResult = $batchController->handleAddBatch();
+$message = $postResult['message'];
+$messageType = $postResult['messageType'];
 
-    if ($name === '' || $startDate === '' || !in_array($status, ['active', 'inactive', 'completed'], true)) {
-        $message = 'Please provide a batch name, start date, and valid status.';
-        $messageType = 'error';
-    } else {
-        try {
-            $db->beginTransaction();
-
-            $batchStatement = $db->prepare(
-                'INSERT INTO batches (name, start_date, status) VALUES (?, ?, ?)'
-            );
-            $batchStatement->execute([$name, $startDate, $status]);
-
-            if ($teacherId > 0) {
-                $teacherStatement = $db->prepare(
-                    'INSERT INTO batch_teachers (batch_id, teacher_id) VALUES (?, ?)'
-                );
-                $teacherStatement->execute([$db->lastInsertId(), $teacherId]);
-            }
-
-            $db->commit();
-            $message = 'Batch created successfully.';
-        } catch (PDOException $error) {
-            if ($db->inTransaction()) {
-                $db->rollBack();
-            }
-            $message = 'Unable to create batch.';
-            $messageType = 'error';
-        }
-    }
-}
-
-$teachers = $db->query(
-    'SELECT teachers.id, users.name
-     FROM teachers INNER JOIN users ON users.id = teachers.user_id
-     WHERE users.status = \'active\'
-     ORDER BY users.name'
-)->fetchAll();
-
-$batches = $db->query(
-    'SELECT batches.id, batches.name, batches.start_date, batches.status,
-        COALESCE((
-            SELECT GROUP_CONCAT(users.name SEPARATOR \\', \\')
-            FROM batch_teachers
-            INNER JOIN teachers ON teachers.id = batch_teachers.teacher_id
-            INNER JOIN users ON users.id = teachers.user_id
-            WHERE batch_teachers.batch_id = batches.id
-        ), \'Not assigned\') AS teacher_names,
-        (
-            SELECT COUNT(*)
-            FROM enrollments
-            WHERE enrollments.batch_id = batches.id AND enrollments.status = \'active\'
-        ) AS student_count
-     FROM batches
-     ORDER BY batches.id DESC'
-)->fetchAll();
+$teachers = $batchController->getActiveTeachers();
+$batches = $batchController->getAllBatches();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -182,27 +128,29 @@ $batches = $db->query(
             <form class="modal_form" method="post">
                 <div class="form_group">
                     <label>Batch Name</label>
-                    <input type="text" name="name" placeholder="e.g. Batch A (HSC 2026)" required>
+                    <input type="text" name="name" value="<?= htmlspecialchars($_POST['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. Batch A (HSC 2026)" minlength="2" maxlength="100" required>
                 </div>
                 <div class="form_group">
                     <label>Assign Teacher</label>
                     <select name="teacher_id">
                         <option value="0">No teacher yet</option>
                         <?php foreach ($teachers as $teacher): ?>
-                            <option value="<?= (int) $teacher['id']; ?>"><?= htmlspecialchars($teacher['name'], ENT_QUOTES, 'UTF-8'); ?></option>
+                            <option value="<?= (int) $teacher['id']; ?>" <?= (isset($_POST['teacher_id']) && (int)$_POST['teacher_id'] === (int)$teacher['id']) ? 'selected' : ''; ?>>
+                                <?= htmlspecialchars($teacher['name'], ENT_QUOTES, 'UTF-8'); ?>
+                            </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="form_group">
                     <label>Start Date</label>
-                    <input type="date" name="start_date" required>
+                    <input type="date" name="start_date" value="<?= htmlspecialchars($_POST['start_date'] ?? date('Y-m-d'), ENT_QUOTES, 'UTF-8'); ?>" required>
                 </div>
                 <div class="form_group">
                     <label>Status</label>
                     <select name="status" required>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                        <option value="completed">Completed</option>
+                        <option value="active" <?= (($_POST['status'] ?? 'active') === 'active') ? 'selected' : ''; ?>>Active</option>
+                        <option value="inactive" <?= (($_POST['status'] ?? '') === 'inactive') ? 'selected' : ''; ?>>Inactive</option>
+                        <option value="completed" <?= (($_POST['status'] ?? '') === 'completed') ? 'selected' : ''; ?>>Completed</option>
                     </select>
                 </div>
                 <div class="modal_buttons">
@@ -226,6 +174,14 @@ $batches = $db->query(
             }
         });
 
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile_open')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile_open');
+                }
+            }
+        });
+
         // Modal Open / Close
         const openAddModal = document.getElementById('openAddModal');
         const closeModal = document.getElementById('closeModal');
@@ -235,6 +191,13 @@ $batches = $db->query(
         openAddModal.addEventListener('click', () => batchModal.classList.add('show'));
         closeModal.addEventListener('click', () => batchModal.classList.remove('show'));
         cancelModal.addEventListener('click', () => batchModal.classList.remove('show'));
+        batchModal.addEventListener('click', (e) => {
+            if (e.target === batchModal) batchModal.classList.remove('show');
+        });
+
+        <?php if ($messageType === 'error'): ?>
+        batchModal.classList.add('show');
+        <?php endif; ?>
     </script>
 </body>
 

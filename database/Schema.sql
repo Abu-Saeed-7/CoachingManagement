@@ -24,7 +24,7 @@ CREATE TABLE `students` (
 CREATE TABLE `teachers` (
     `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
     `user_id` BIGINT NOT NULL UNIQUE,
-    `subject_id` BIGINT,
+    `subject_specialist` VARCHAR(100),
     `phone` VARCHAR(20) NOT NULL,
     `gender` ENUM('male', 'female', 'other') NOT NULL,
     `address` VARCHAR(255),
@@ -141,10 +141,6 @@ ALTER TABLE `teachers`
 ADD FOREIGN KEY (`user_id`)
 REFERENCES `users` (`id`);
 
-
-ALTER TABLE `teachers`
-ADD FOREIGN KEY (`subject_id`)
-REFERENCES `subjects` (`id`);
 
 
 ALTER TABLE `batch_teachers`

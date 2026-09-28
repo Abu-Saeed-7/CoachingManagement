@@ -1,3 +1,19 @@
+<?php
+require_once __DIR__ . '/../../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../../backend/controllers/ExamController.php';
+
+checkAuth(['student', 'admin']);
+
+$student = getCurrentStudentSession();
+$studentId = $student['id'];
+$studentName = $student['name'];
+
+$examController = new ExamController();
+$data = $examController->getStudentExamsAndClasses((int) $studentId);
+
+$enrolledBatches = $data['enrolledBatches'];
+$upcomingExams = $data['upcomingExams'];
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -20,7 +36,7 @@
             <span class="nav_icon" title="Notifications">🔔</span>
             <a href="student_profile.php" class="student_profile_btn">
                 <span>🎓</span>
-                <span class="student_name">Rahim Ahmed ▾</span>
+                <span class="student_name"><?= htmlspecialchars($studentName, ENT_QUOTES, 'UTF-8'); ?> ▾</span>
             </a>
         </div>
     </header>
@@ -44,75 +60,35 @@
         <main class="main_content">
             <div class="page_header">
                 <h1>Classes & Exams Schedule</h1>
-                <p>View your weekly class routine and upcoming exam schedules for all your enrolled batches.</p>
-            </div>
-
-            <!-- CONTROLS & BATCH FILTER BAR -->
-            <div class="schedule_controls">
-                <div class="batch_filter_group">
-                    <label>Filter by Batch:</label>
-                    <select class="batch_select" id="batchSelector">
-                        <option value="all">All Enrolled Batches (Batch A & Batch B)</option>
-                        <option value="batch_a">Batch A (Higher Math & Physics)</option>
-                        <option value="batch_b">Batch B (Chemistry)</option>
-                    </select>
-                </div>
-                <div class="schedule_tabs">
-                    <button class="tab_btn active" onclick="switchTab('all')">All Schedules</button>
-                    <button class="tab_btn" onclick="switchTab('classes')">Classes Only</button>
-                    <button class="tab_btn" onclick="switchTab('exams')">Exams Only</button>
-                </div>
+                <p>View your enrolled batch routines and upcoming exams.</p>
             </div>
 
             <div class="schedule_sections">
-                <!-- SECTION 1: WEEKLY CLASS ROUTINE -->
-                <div class="section_card" id="classesSection">
-                    <div class="section_header">
-                        <h3>📖 Weekly Class Schedule & Routine</h3>
-                        <span class="badge badge_batch">3 Active Classes / Week</span>
+                <!-- SECTION 1: ENROLLED BATCHES -->
+                <div class="section_card" style="background:#fff; border-radius:10px; border:1px solid #e5e7eb; padding:20px; margin-bottom:24px;">
+                    <div class="section_header" style="margin-bottom:16px;">
+                        <h3>📖 My Enrolled Batches</h3>
                     </div>
 
-                    <div class="timetable_grid">
-                        <!-- Class 1 -->
-                        <div class="class_box">
-                            <span class="class_day">Monday & Wednesday</span>
-                            <div class="class_subject">Higher Mathematics (Calculus)</div>
-                            <div class="class_meta">
-                                <div>👨‍🏫 Prof. Abdul Karim</div>
-                                <div>🏷️ <span class="badge badge_batch">Batch A</span></div>
-                                <div class="time_tag">⏰ 04:00 PM - 06:00 PM (Room 302)</div>
-                            </div>
+                    <?php if (empty($enrolledBatches)): ?>
+                        <p style="color:#6b7280;">You are not enrolled in any active batches yet.</p>
+                    <?php else: ?>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+                            <?php foreach ($enrolledBatches as $b): ?>
+                                <div style="border:1px solid #e5e7eb; border-radius:8px; padding:16px; background:#f9fafb;">
+                                    <h4 style="margin:0 0 8px 0; color:#111827;"><?= htmlspecialchars($b['name'], ENT_QUOTES, 'UTF-8'); ?></h4>
+                                    <p style="margin:0 0 6px 0; font-size:13px; color:#4b5563;">Instructors: <strong><?= htmlspecialchars($b['teachers'], ENT_QUOTES, 'UTF-8'); ?></strong></p>
+                                    <p style="margin:0; font-size:12px; color:#6b7280;">Started on: <?= htmlspecialchars($b['start_date'], ENT_QUOTES, 'UTF-8'); ?></p>
+                                </div>
+                            <?php endforeach; ?>
                         </div>
-
-                        <!-- Class 2 -->
-                        <div class="class_box physics">
-                            <span class="class_day">Sunday & Tuesday</span>
-                            <div class="class_subject">Physics (Mechanics & Waves)</div>
-                            <div class="class_meta">
-                                <div>👨‍🏫 Dr. Nusrat Jahan</div>
-                                <div>🏷️ <span class="badge badge_batch">Batch A</span></div>
-                                <div class="time_tag" style="color:#0284c7;">⏰ 05:30 PM - 07:00 PM (Room 201)</div>
-                            </div>
-                        </div>
-
-                        <!-- Class 3 -->
-                        <div class="class_box chemistry">
-                            <span class="class_day">Friday</span>
-                            <div class="class_subject">Chemistry (Organic Chemistry)</div>
-                            <div class="class_meta">
-                                <div>👨‍🏫 Mohammad Ali</div>
-                                <div>🏷️ <span class="badge badge_batch">Batch B</span></div>
-                                <div class="time_tag" style="color:#059669;">⏰ 09:30 AM - 11:30 AM (Room 105)</div>
-                            </div>
-                        </div>
-                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- SECTION 2: UPCOMING EXAMS SCHEDULE -->
-                <div class="section_card" id="examsSection">
-                    <div class="section_header">
-                        <h3>📝 Upcoming Exams Schedule</h3>
-                        <span class="badge badge_upcoming">2 Scheduled Exams</span>
+                <div class="section_card" style="background:#fff; border-radius:10px; border:1px solid #e5e7eb; padding:20px;">
+                    <div class="section_header" style="margin-bottom:16px;">
+                        <h3>📝 Upcoming Scheduled Exams</h3>
                     </div>
 
                     <div class="table_container">
@@ -122,36 +98,26 @@
                                     <th>Exam Title</th>
                                     <th>Subject</th>
                                     <th>Batch</th>
-                                    <th>Date & Time</th>
+                                    <th>Date</th>
                                     <th>Total Marks</th>
-                                    <th>Room / Venue</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td><strong>Monthly Calculus Assessment</strong></td>
-                                    <td>Higher Mathematics</td>
-                                    <td><span class="badge badge_batch">Batch A</span></td>
-                                    <td>📅 25 Aug 2026 (10:00 AM)</td>
-                                    <td><strong>50 Marks</strong></td>
-                                    <td>Exam Hall 01</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Physics Weekly Quiz</strong></td>
-                                    <td>Physics</td>
-                                    <td><span class="badge badge_batch">Batch A</span></td>
-                                    <td>📅 30 Aug 2026 (11:30 AM)</td>
-                                    <td><strong>30 Marks</strong></td>
-                                    <td>Room 201</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Chemistry Term Final</strong></td>
-                                    <td>Chemistry</td>
-                                    <td><span class="badge badge_batch">Batch B</span></td>
-                                    <td>📅 05 Sep 2026 (04:00 PM)</td>
-                                    <td><strong>100 Marks</strong></td>
-                                    <td>Main Auditorium</td>
-                                </tr>
+                                <?php if (empty($upcomingExams)): ?>
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; color: #6b7280; padding: 24px;">No upcoming exams scheduled for your batches.</td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($upcomingExams as $ex): ?>
+                                        <tr>
+                                            <td><strong><?= htmlspecialchars($ex['name'], ENT_QUOTES, 'UTF-8'); ?></strong></td>
+                                            <td><?= htmlspecialchars($ex['subject_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><span class="badge" style="background:#eef2ff; color:#4f46e5; padding:3px 8px; border-radius:12px; font-size:12px;"><?= htmlspecialchars($ex['batch_name'], ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                            <td><?= htmlspecialchars(date('d M, Y', strtotime($ex['exam_date'])), ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?= htmlspecialchars(number_format((float)$ex['total_marks'], 0), ENT_QUOTES, 'UTF-8'); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
@@ -172,26 +138,13 @@
             }
         });
 
-        // Tab Switcher
-        function switchTab(type) {
-            const tabs = document.querySelectorAll('.tab_btn');
-            tabs.forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-
-            const classesSec = document.getElementById('classesSection');
-            const examsSec = document.getElementById('examsSection');
-
-            if (type === 'all') {
-                classesSec.style.display = 'block';
-                examsSec.style.display = 'block';
-            } else if (type === 'classes') {
-                classesSec.style.display = 'block';
-                examsSec.style.display = 'none';
-            } else if (type === 'exams') {
-                classesSec.style.display = 'none';
-                examsSec.style.display = 'block';
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile_open')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile_open');
+                }
             }
-        }
+        });
     </script>
 </body>
 

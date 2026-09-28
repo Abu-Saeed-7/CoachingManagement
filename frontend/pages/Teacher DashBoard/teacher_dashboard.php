@@ -1,3 +1,22 @@
+<?php
+require_once __DIR__ . '/../../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../../backend/controllers/DashboardController.php';
+
+checkAuth(['teacher', 'admin']);
+
+$teacher = getCurrentTeacherSession();
+$teacherId = $teacher['id'];
+$teacherName = $teacher['name'];
+
+$dashboardController = new DashboardController();
+$data = $dashboardController->getTeacherDashboardData((int) $teacherId);
+
+$assignedBatchesCount = $data['activeBatchesCount'];
+$totalStudentsCount = $data['totalStudents'];
+$todayBatches = $data['assignedBatches'];
+$classesToday = count($todayBatches);
+$pendingExams = $data['upcomingExams'];
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -20,7 +39,7 @@
             <span class="nav_icon" title="Search">🔍</span>
             <a href="teacher_profile.php" class="teacher_profile_btn">
                 <span>👨‍🏫</span>
-                <span class="teacher_name">Prof. Karim ▾</span>
+                <span class="teacher_name"><?= htmlspecialchars($teacherName, ENT_QUOTES, 'UTF-8'); ?> ▾</span>
             </a>
         </div>
     </header>
@@ -44,31 +63,31 @@
         <main class="main_content">
             <!-- WELCOME SECTION -->
             <div class="welcome_section">
-                <h1>Welcome Back, Prof. Abdul Karim 👋</h1>
+                <h1>Welcome Back, <?= htmlspecialchars($teacherName, ENT_QUOTES, 'UTF-8'); ?> 👋</h1>
                 <p>Here is your teaching schedule and student overview today.</p>
             </div>
 
             <!-- STATISTICS CARDS -->
             <div class="stats_grid">
-                <div class="stat_card">
+                <div class="stat_card" onclick="window.location.href='teacher_batches.php'" style="cursor: pointer;">
                     <div class="card_icon">📚</div>
                     <div class="card_info">
                         <h3>Assigned Batches</h3>
-                        <p class="card_value">3 Batches</p>
+                        <p class="card_value"><?= $assignedBatchesCount; ?> Batches</p>
                     </div>
                 </div>
-                <div class="stat_card">
+                <div class="stat_card" onclick="window.location.href='teacher_students.php'" style="cursor: pointer;">
                     <div class="card_icon">👥</div>
                     <div class="card_info">
                         <h3>Total Students</h3>
-                        <p class="card_value">83 Students</p>
+                        <p class="card_value"><?= $totalStudentsCount; ?> Students</p>
                     </div>
                 </div>
                 <div class="stat_card">
                     <div class="card_icon">📅</div>
                     <div class="card_info">
-                        <h3>Classes Today</h3>
-                        <p class="card_value">2 Sessions</p>
+                        <h3>Active Batches</h3>
+                        <p class="card_value"><?= $classesToday; ?> Batches</p>
                     </div>
                 </div>
             </div>
@@ -79,7 +98,7 @@
                 <div class="action_buttons">
                     <a href="teacher_attendance.php" class="action_btn"><span>📋</span> Take Attendance</a>
                     <a href="teacher_results.php" class="action_btn"><span>📊</span> Input Exam Marks</a>
-                    <a href="teacher_batches.php" class="action_btn"><span>👥</span> View My Students</a>
+                    <a href="teacher_batches.php" class="action_btn"><span>👥</span> View My Batches</a>
                 </div>
             </div>
 
@@ -88,45 +107,55 @@
                 <!-- Schedule Card -->
                 <div class="info_card">
                     <div class="info_card_header">
-                        <h3>TODAY'S CLASS SCHEDULE</h3>
+                        <h3>MY ACTIVE BATCHES</h3>
+                        <a href="teacher_batches.php" class="view_all_link" style="color: #4f46e5; text-decoration: none; font-size: 13px; font-weight: 600;">View All</a>
                     </div>
                     <ul class="info_list">
-                        <li>
-                            <div class="schedule_item">
-                                <div>
-                                    <div class="batch_title">Batch A (HSC 2026)</div>
-                                    <span class="badge">Higher Math - Calculus</span>
+                        <?php if (empty($todayBatches)): ?>
+                            <li>
+                                <div class="schedule_item">
+                                    <span style="color:#6b7280;">No active batches assigned.</span>
                                 </div>
-                                <span class="batch_time">⏰ 04:00 PM</span>
-                            </div>
-                        </li>
-                        <li>
-                            <div class="schedule_item">
-                                <div>
-                                    <div class="batch_title">Batch C (Special Math)</div>
-                                    <span class="badge">Trigonometry</span>
-                                </div>
-                                <span class="batch_time">⏰ 06:30 PM</span>
-                            </div>
-                        </li>
+                            </li>
+                        <?php else: ?>
+                            <?php foreach ($todayBatches as $b): ?>
+                                <li>
+                                    <div class="schedule_item" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                        <strong><?= htmlspecialchars($b['name'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                        <span style="color: #6b7280; font-size: 13px;">Started: <?= htmlspecialchars($b['start_date'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                    </div>
+                                </li>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </ul>
                 </div>
 
                 <!-- Upcoming Exams to Grade -->
                 <div class="info_card">
                     <div class="info_card_header">
-                        <h3>PENDING EXAM RESULTS</h3>
+                        <h3>BATCH EXAMS & ASSESSMENTS</h3>
+                        <a href="teacher_results.php" class="view_all_link" style="color: #4f46e5; text-decoration: none; font-size: 13px; font-weight: 600;">Enter Marks</a>
                     </div>
                     <ul class="info_list">
-                        <li>
-                            <div class="schedule_item">
-                                <div>
-                                    <div class="batch_title">Monthly Math Assessment</div>
-                                    <span class="badge">Batch A</span>
+                        <?php if (empty($pendingExams)): ?>
+                            <li>
+                                <div class="schedule_item">
+                                    <span style="color:#6b7280;">No exams scheduled for your batches.</span>
                                 </div>
-                                <a href="teacher_results.php" class="badge" style="background:#fef3c7; color:#b45309; text-decoration:none;">Enter Marks ➜</a>
-                            </div>
-                        </li>
+                            </li>
+                        <?php else: ?>
+                            <?php foreach ($pendingExams as $ex): ?>
+                                <li>
+                                    <div class="schedule_item" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                        <div>
+                                            <strong><?= htmlspecialchars($ex['name'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                            <span style="display: block; font-size: 12px; color: #6b7280;"><?= htmlspecialchars($ex['subject_name'] . ' • ' . $ex['batch_name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                        </div>
+                                        <span style="color: #6b7280; font-size: 13px;"><?= htmlspecialchars(date('d M', strtotime($ex['exam_date'])), ENT_QUOTES, 'UTF-8'); ?></span>
+                                    </div>
+                                </li>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </ul>
                 </div>
             </div>
@@ -142,6 +171,14 @@
                 sidebar.classList.toggle('mobile_open');
             } else {
                 sidebar.classList.toggle('collapsed');
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('mobile_open')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile_open');
+                }
             }
         });
     </script>

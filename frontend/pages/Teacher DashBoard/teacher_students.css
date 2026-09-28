@@ -117,3 +117,35 @@
 .btn_action:hover {
     background-color: #e5e7eb;
 }
+
+/* ========================================================
+   RESPONSIVE DESIGN (Tablets, Laptops, Mobile)
+   ======================================================== */
+@media (max-width: 768px) {
+    .page_header {
+        margin-bottom: 16px;
+    }
+
+    .table_controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .search_input,
+    .filter_select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .custom_table {
+        min-width: 550px;
+    }
+}
+
+@media (max-width: 480px) {
+    .custom_table th,
+    .custom_table td {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+}

@@ -164,11 +164,35 @@
     background-color: #3b2aa1;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .profile_layout {
         grid-template-columns: 1fr;
+        gap: 16px;
     }
+}
+
+@media (max-width: 768px) {
     .form_row {
         grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .settings_card,
+    .profile_card {
+        padding: 18px 16px;
+    }
+
+    .btn_save {
+        width: 100%;
+        text-align: center;
+        padding: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile_avatar {
+        width: 72px;
+        height: 72px;
+        font-size: 34px;
     }
 }
