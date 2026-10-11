@@ -37,6 +37,8 @@ CREATE TABLE `batches` (
     `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
     `name` VARCHAR(100) NOT NULL,
     `start_date` DATE NOT NULL,
+    `schedule_time` VARCHAR(150) NULL DEFAULT 'Sat, Mon, Wed (10:00 AM - 11:30 AM)',
+    `room_number` VARCHAR(50) NULL DEFAULT 'Room 101',
     `status` ENUM('active', 'inactive', 'completed') NOT NULL,
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -128,6 +130,19 @@ CREATE TABLE `fees` (
 );
 
 
+CREATE TABLE `class_schedules` (
+    `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
+    `batch_id` BIGINT NOT NULL,
+    `subject_id` BIGINT NOT NULL,
+    `teacher_id` BIGINT NOT NULL,
+    `day_of_week` ENUM('Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday') NOT NULL,
+    `start_time` TIME NOT NULL,
+    `end_time` TIME NOT NULL,
+    `room_number` VARCHAR(50) DEFAULT 'Room 101',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- =========================
 -- FOREIGN KEY RELATIONSHIPS
 -- =========================
@@ -206,3 +221,18 @@ REFERENCES `exams` (`id`);
 ALTER TABLE `fees`
 ADD FOREIGN KEY (`student_id`)
 REFERENCES `students` (`id`);
+
+
+ALTER TABLE `class_schedules`
+ADD FOREIGN KEY (`batch_id`)
+REFERENCES `batches` (`id`) ON DELETE CASCADE;
+
+
+ALTER TABLE `class_schedules`
+ADD FOREIGN KEY (`subject_id`)
+REFERENCES `subjects` (`id`) ON DELETE CASCADE;
+
+
+ALTER TABLE `class_schedules`
+ADD FOREIGN KEY (`teacher_id`)
+REFERENCES `teachers` (`id`) ON DELETE CASCADE;

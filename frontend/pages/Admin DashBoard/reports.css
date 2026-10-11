@@ -1,0 +1,700 @@
+/* ========================================================
+   ADMIN REPORTS & ANALYTICS STYLES (reports.css)
+   ======================================================== */
+
+.report_page_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.report_page_header h1 {
+    font-size: 24px;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.report_page_header p {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.report_header_actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn_action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn_excel {
+    background-color: #107c41;
+    color: #ffffff;
+}
+
+.btn_excel:hover {
+    background-color: #0b5c30;
+    box-shadow: 0 4px 10px rgba(16, 124, 65, 0.25);
+}
+
+.btn_print {
+    background-color: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.btn_print:hover {
+    background-color: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+/* ========================================================
+   TAB NAVIGATION
+   ======================================================== */
+.report_tabs_container {
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.report_tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+}
+
+.report_tab_btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.report_tab_btn:hover {
+    color: #4d38c4;
+    background-color: #f5f3ff;
+    border-radius: 6px 6px 0 0;
+}
+
+.report_tab_btn.active {
+    color: #4d38c4;
+    border-bottom-color: #4d38c4;
+    background-color: #ffffff;
+    border-radius: 6px 6px 0 0;
+}
+
+/* TAB PANES */
+.report_tab_pane {
+    display: none;
+}
+
+.report_tab_pane.active {
+    display: block;
+    animation: fadeInTab 0.25s ease-in-out;
+}
+
+@keyframes fadeInTab {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================================================
+   FILTER TOOLBAR
+   ======================================================== */
+.filter_card {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 22px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.filter_form {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.filter_field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 150px;
+    flex: 1;
+}
+
+.filter_field.auto_width {
+    flex: 0 0 auto;
+    min-width: unset;
+}
+
+.filter_label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.filter_input,
+.filter_select {
+    padding: 9px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    font-size: 13px;
+    color: #1f2937;
+    background-color: #f9fafb;
+    outline: none;
+    transition: border 0.15s ease;
+}
+
+.filter_input:focus,
+.filter_select:focus {
+    border-color: #4d38c4;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(77, 56, 196, 0.1);
+}
+
+.btn_apply {
+    background-color: #4d38c4;
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    height: 38px;
+}
+
+.btn_apply:hover {
+    background-color: #3b2aa1;
+}
+
+.btn_reset {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #d1d5db;
+    padding: 10px 16px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    height: 38px;
+}
+
+.btn_reset:hover {
+    background-color: #e5e7eb;
+}
+
+/* ========================================================
+   KPI SUMMARY CARDS
+   ======================================================== */
+.kpi_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.kpi_card {
+    background-color: #ffffff;
+    padding: 18px 20px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.kpi_card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.kpi_card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background-color: #4d38c4;
+}
+
+.kpi_card.success::before { background-color: #10b981; }
+.kpi_card.warning::before { background-color: #f59e0b; }
+.kpi_card.danger::before { background-color: #ef4444; }
+.kpi_card.info::before { background-color: #3b82f6; }
+
+.kpi_top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.kpi_label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+}
+
+.kpi_icon_badge {
+    font-size: 18px;
+}
+
+.kpi_val {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.2;
+}
+
+.kpi_sub {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 4px;
+}
+
+.kpi_sub strong {
+    color: #4b5563;
+}
+
+/* ========================================================
+   CHARTS & VISUAL ANALYTICS
+   ======================================================== */
+.analytics_row {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 992px) {
+    .analytics_row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.analytics_box {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+}
+
+.analytics_box_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 10px;
+}
+
+.analytics_box_header h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.analytics_badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background-color: #ede9fe;
+    color: #5b21b6;
+    font-weight: 600;
+}
+
+.chart_wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 220px;
+    display: block;
+}
+
+.chart_wrapper canvas {
+    width: 100% !important;
+    height: 220px !important;
+    display: block;
+}
+
+/* INTERACTIVE CHART TOOLTIP */
+.chart_tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: #111827;
+    color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.4;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    opacity: 0;
+    transform: translate(-50%, -100%) translateY(-10px);
+    transition: opacity 0.12s ease;
+    z-index: 100;
+    white-space: nowrap;
+}
+
+.chart_tooltip.visible {
+    opacity: 1;
+}
+
+.chart_tooltip.bottom_flipped {
+    transform: translate(-50%, 12px) !important;
+}
+
+.chart_tooltip .tt_title {
+    font-weight: 700;
+    color: #f3f4f6;
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding-bottom: 3px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.chart_tooltip .tt_row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 3px;
+}
+
+.chart_tooltip .tt_dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.chart_tooltip .tt_val {
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.chart_tooltip .tt_divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.12);
+    margin: 6px 0 5px 0;
+}
+
+.chart_tooltip .tt_sub_row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.chart_tooltip .tt_sub_row .tt_val {
+    color: #f3f4f6;
+    font-weight: 600;
+}
+
+/* ========================================================
+   TABLE SECTION & DATA TABLES
+   ======================================================== */
+.report_section {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    overflow: hidden;
+}
+
+.report_section_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    background-color: #fafafa;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.report_section_header h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section_badge_alert {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.table_search_wrap {
+    position: relative;
+    width: 250px;
+}
+
+.table_search_input {
+    width: 100%;
+    padding: 7px 12px 7px 30px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    background-color: #ffffff;
+}
+
+.table_search_input:focus {
+    border-color: #4d38c4;
+}
+
+.table_search_icon {
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: #9ca3af;
+    pointer-events: none;
+}
+
+.table_scroll {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.report_table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13px;
+}
+
+.report_table th {
+    background-color: #f9fafb;
+    color: #4b5563;
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.report_table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+    vertical-align: middle;
+}
+
+.report_table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* BADGES */
+.badge {
+    display: inline-block;
+    padding: 4px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.badge_paid { background-color: #dcfce7; color: #15803d; }
+.badge_unpaid { background-color: #fee2e2; color: #b91c1c; }
+.badge_partial { background-color: #fef3c7; color: #b45309; }
+
+.badge_present { background-color: #dcfce7; color: #15803d; }
+.badge_absent { background-color: #fee2e2; color: #b91c1c; }
+.badge_late { background-color: #fef3c7; color: #b45309; }
+
+.badge_active { background-color: #e0e7ff; color: #3730a3; }
+.badge_completed { background-color: #f3f4f6; color: #4b5563; }
+
+.rank_badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.rank_1 { background-color: #fef08a; color: #854d0e; border: 1px solid #facc15; }
+.rank_2 { background-color: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; }
+.rank_3 { background-color: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
+.rank_other { background-color: #f1f5f9; color: #64748b; }
+
+.btn_call {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background-color: #2563eb;
+    color: #ffffff;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+
+.btn_call:hover {
+    background-color: #1d4ed8;
+}
+
+.empty_state_row {
+    text-align: center;
+    padding: 30px !important;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+/* ACTIVE FILTER BAR */
+.active_filter_bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 10px 16px;
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #4c1d95;
+}
+
+.active_filter_label {
+    font-weight: 700;
+    color: #4338ca;
+}
+
+.filter_chip {
+    background: #ffffff;
+    border: 1px solid #c7d2fe;
+    padding: 3px 10px;
+    border-radius: 14px;
+    font-size: 12px;
+    color: #312e81;
+}
+
+.clear_filter_chip {
+    margin-left: auto;
+    color: #b91c1c;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+
+.clear_filter_chip:hover {
+    background: #fee2e2;
+    text-decoration: underline;
+}
+
+/* ========================================================
+   PRINT STYLES
+   ======================================================== */
+@media print {
+    body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    .top_navbar,
+    .sidebar,
+    .report_header_actions,
+    .report_tabs_container,
+    .filter_card,
+    .table_search_wrap,
+    .btn_call,
+    .action_col {
+        display: none !important;
+    }
+
+    .dashboard_container {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .main_content {
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    .report_tab_pane {
+        display: block !important;
+        page-break-after: always;
+        margin-bottom: 30px;
+    }
+
+    .report_section {
+        box-shadow: none !important;
+        border: 1px solid #cccccc !important;
+    }
+
+    .kpi_card {
+        border: 1px solid #cccccc !important;
+        box-shadow: none !important;
+    }
+
+    .report_page_header h1::after {
+        content: " - Official Print Copy";
+        font-size: 14px;
+        color: #555555;
+    }
+}

@@ -12,6 +12,7 @@ $examController = new ExamController();
 $data = $examController->getStudentExamsAndClasses((int) $studentId);
 
 $enrolledBatches = $data['enrolledBatches'];
+$classSchedules = $data['classSchedules'] ?? [];
 $upcomingExams = $data['upcomingExams'];
 ?>
 <!DOCTYPE html>
@@ -60,12 +61,43 @@ $upcomingExams = $data['upcomingExams'];
         <main class="main_content">
             <div class="page_header">
                 <h1>Classes & Exams Schedule</h1>
-                <p>View your enrolled batch routines and upcoming exams.</p>
+                <p>View your enrolled batch routines, weekly class timetables and upcoming exams.</p>
             </div>
 
             <div class="schedule_sections">
-                <!-- SECTION 1: ENROLLED BATCHES -->
-                <div class="section_card" style="background:#fff; border-radius:10px; border:1px solid #e5e7eb; padding:20px; margin-bottom:24px;">
+                <!-- SECTION 1: WEEKLY CLASS ROUTINE -->
+                <div class="section_card" style="background:#fff; border-radius:12px; border:1px solid #e5e7eb; padding:20px; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+                    <div class="section_header" style="margin-bottom:16px;">
+                        <h3>🗓️ Weekly Class Routine & Timetable</h3>
+                    </div>
+
+                    <?php if (empty($classSchedules)): ?>
+                        <div style="padding: 24px; text-align: center; background: #f9fafb; border-radius: 8px; border: 1px dashed #d1d5db;">
+                            <p style="color:#6b7280; margin:0 0 8px 0;">No specific class routine slots scheduled yet for your batches.</p>
+                            <span style="font-size:12px; color:#9ca3af;">Check your enrolled batches below for general class timing.</span>
+                        </div>
+                    <?php else: ?>
+                        <div class="timetable_grid">
+                            <?php foreach ($classSchedules as $cs): ?>
+                                <div class="class_box">
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <span class="class_day"><?= htmlspecialchars($cs['day_of_week'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <span class="badge badge_batch"><?= htmlspecialchars($cs['batch_name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                    </div>
+                                    <div class="class_subject"><?= htmlspecialchars($cs['subject_name'], ENT_QUOTES, 'UTF-8'); ?></div>
+                                    <div class="class_meta">
+                                        <span class="time_tag">⏰ <?= date('h:i A', strtotime($cs['start_time'])); ?> – <?= date('h:i A', strtotime($cs['end_time'])); ?></span>
+                                        <span>👨‍🏫 Faculty: <strong><?= htmlspecialchars($cs['teacher_name'], ENT_QUOTES, 'UTF-8'); ?></strong></span>
+                                        <span>📍 Venue: <strong><?= htmlspecialchars($cs['room_number'], ENT_QUOTES, 'UTF-8'); ?></strong></span>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- SECTION 2: ENROLLED BATCHES -->
+                <div class="section_card" style="background:#fff; border-radius:12px; border:1px solid #e5e7eb; padding:20px; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
                     <div class="section_header" style="margin-bottom:16px;">
                         <h3>📖 My Enrolled Batches</h3>
                     </div>
@@ -75,18 +107,22 @@ $upcomingExams = $data['upcomingExams'];
                     <?php else: ?>
                         <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
                             <?php foreach ($enrolledBatches as $b): ?>
-                                <div style="border:1px solid #e5e7eb; border-radius:8px; padding:16px; background:#f9fafb;">
-                                    <h4 style="margin:0 0 8px 0; color:#111827;"><?= htmlspecialchars($b['name'], ENT_QUOTES, 'UTF-8'); ?></h4>
-                                    <p style="margin:0 0 6px 0; font-size:13px; color:#4b5563;">Instructors: <strong><?= htmlspecialchars($b['teachers'], ENT_QUOTES, 'UTF-8'); ?></strong></p>
-                                    <p style="margin:0; font-size:12px; color:#6b7280;">Started on: <?= htmlspecialchars($b['start_date'], ENT_QUOTES, 'UTF-8'); ?></p>
+                                <div style="border:1px solid #e5e7eb; border-radius:8px; padding:16px; background:#f9fafb; display:flex; flex-direction:column; gap:6px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <h4 style="margin:0; color:#111827; font-size:16px;"><?= htmlspecialchars($b['name'], ENT_QUOTES, 'UTF-8'); ?></h4>
+                                        <span class="badge badge_batch">Enrolled</span>
+                                    </div>
+                                    <p style="margin:4px 0 0 0; font-size:13px; color:#4b5563;">Instructors: <strong><?= htmlspecialchars($b['teachers'], ENT_QUOTES, 'UTF-8'); ?></strong></p>
+                                    <p style="margin:0; font-size:13px; color:#4f46e5; font-weight:600;">⏰ Timing: <?= htmlspecialchars($b['schedule_time'], ENT_QUOTES, 'UTF-8'); ?></p>
+                                    <p style="margin:0; font-size:12px; color:#6b7280;">📍 Venue: <?= htmlspecialchars($b['room_number'], ENT_QUOTES, 'UTF-8'); ?> &bull; Started: <?= htmlspecialchars($b['start_date'], ENT_QUOTES, 'UTF-8'); ?></p>
                                 </div>
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
                 </div>
 
-                <!-- SECTION 2: UPCOMING EXAMS SCHEDULE -->
-                <div class="section_card" style="background:#fff; border-radius:10px; border:1px solid #e5e7eb; padding:20px;">
+                <!-- SECTION 3: UPCOMING EXAMS SCHEDULE -->
+                <div class="section_card" style="background:#fff; border-radius:12px; border:1px solid #e5e7eb; padding:20px; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
                     <div class="section_header" style="margin-bottom:16px;">
                         <h3>📝 Upcoming Scheduled Exams</h3>
                     </div>

@@ -16,6 +16,8 @@ $enrolledBatches = $data['enrolledBatches'];
 $attendanceRate = $data['attendanceRate'];
 $latestResult = $data['latestResult'];
 $upcomingExamTitle = $data['upcomingExamTitle'];
+$upcomingClassTitle = $data['upcomingClassTitle'] ?? '--';
+$upcomingClassesList = $data['upcomingClassesList'] ?? [];
 $feeStatus = $data['feeStatus'];
 $upcomingExamsList = $data['upcomingExamsList'];
 $recentAttendance = $data['recentAttendance'];
@@ -93,11 +95,11 @@ $recentAttendance = $data['recentAttendance'];
                         <p class="card_value" style="color:#10b981;"><?= $attendanceRate; ?></p>
                     </div>
                 </a>
-                <a href="student_results.php" class="stat_card">
-                    <div class="card_icon">📊</div>
+                <a href="student_classes_exams.php" class="stat_card">
+                    <div class="card_icon">⏰</div>
                     <div class="card_info">
-                        <h3>Latest Result</h3>
-                        <p class="card_value" style="color:#6366f1;"><?= htmlspecialchars($latestResult, ENT_QUOTES, 'UTF-8'); ?></p>
+                        <h3>Upcoming Class</h3>
+                        <p class="card_value" style="color:#0284c7; font-size:16px;"><?= htmlspecialchars($upcomingClassTitle, ENT_QUOTES, 'UTF-8'); ?></p>
                     </div>
                 </a>
                 <a href="student_classes_exams.php" class="stat_card">
@@ -105,6 +107,13 @@ $recentAttendance = $data['recentAttendance'];
                     <div class="card_info">
                         <h3>Next Exam</h3>
                         <p class="card_value" style="color:#f59e0b;"><?= htmlspecialchars($upcomingExamTitle, ENT_QUOTES, 'UTF-8'); ?></p>
+                    </div>
+                </a>
+                <a href="student_results.php" class="stat_card">
+                    <div class="card_icon">📊</div>
+                    <div class="card_info">
+                        <h3>Latest Result</h3>
+                        <p class="card_value" style="color:#6366f1;"><?= htmlspecialchars($latestResult, ENT_QUOTES, 'UTF-8'); ?></p>
                     </div>
                 </a>
                 <a href="student_fees.php" class="stat_card">
@@ -118,6 +127,42 @@ $recentAttendance = $data['recentAttendance'];
 
             <!-- QUICK INFORMATION GRIDS -->
             <div class="info_grid">
+                <!-- Upcoming Classes Card -->
+                <div class="info_card">
+                    <div class="info_card_header">
+                        <h3>UPCOMING CLASSES</h3>
+                        <a href="student_classes_exams.php" class="view_link">View Routine ➜</a>
+                    </div>
+                    <ul class="info_list">
+                        <?php if (empty($upcomingClassesList)): ?>
+                            <li>
+                                <div class="list_item">
+                                    <span style="color:#6b7280;">No upcoming classes scheduled.</span>
+                                </div>
+                            </li>
+                        <?php else: ?>
+                            <?php foreach ($upcomingClassesList as $cls): ?>
+                                <li>
+                                    <div class="list_item" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                                        <div>
+                                            <strong><?= htmlspecialchars($cls['subject_name'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                            <span style="display:block; font-size:12px; color:#6b7280;"><?= htmlspecialchars($cls['batch_name'] . ' • 👨‍🏫 ' . $cls['teacher_name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                        </div>
+                                        <div style="text-align:right;">
+                                            <span style="font-size:12px; font-weight:700; color:#4f46e5; display:block;">
+                                                <?= htmlspecialchars($cls['day_of_week'], ENT_QUOTES, 'UTF-8'); ?> <?= date('h:i A', strtotime($cls['start_time'])); ?>
+                                            </span>
+                                            <span style="font-size:11px; color:#6b7280; background:#f3f4f6; padding:2px 6px; border-radius:4px;">
+                                                📍 <?= htmlspecialchars($cls['room_number'], ENT_QUOTES, 'UTF-8'); ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </li>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </ul>
+                </div>
+
                 <!-- Upcoming Exams & Schedule -->
                 <div class="info_card">
                     <div class="info_card_header">

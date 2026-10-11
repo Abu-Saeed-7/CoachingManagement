@@ -121,8 +121,11 @@ $pendingExams = $data['upcomingExams'];
                             <?php foreach ($todayBatches as $b): ?>
                                 <li>
                                     <div class="schedule_item" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                                        <strong><?= htmlspecialchars($b['name'], ENT_QUOTES, 'UTF-8'); ?></strong>
-                                        <span style="color: #6b7280; font-size: 13px;">Started: <?= htmlspecialchars($b['start_date'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <div>
+                                            <strong><?= htmlspecialchars($b['name'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                            <span style="display:block; font-size:12px; color:#4f46e5; font-weight:600;">⏰ <?= htmlspecialchars($b['schedule_time'] ?? 'Not scheduled', ENT_QUOTES, 'UTF-8'); ?></span>
+                                        </div>
+                                        <span style="color: #6b7280; font-size: 13px;">📍 <?= htmlspecialchars($b['room_number'] ?? 'Room 101', ENT_QUOTES, 'UTF-8'); ?></span>
                                     </div>
                                 </li>
                             <?php endforeach; ?>

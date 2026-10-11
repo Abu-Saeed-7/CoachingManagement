@@ -49,9 +49,11 @@ $batches = $batchController->getAllBatches();
                 <li><a href="students.php">🎓 <span>Students</span></a></li>
                 <li><a href="teachers.php">👨‍🏫 <span>Teachers</span></a></li>
                 <li class="active"><a href="batches.php">📚 <span>Batches</span></a></li>
+                <li><a href="classes.php">📅 <span>Classes</span></a></li>
                 <li><a href="exams.php">📝 <span>Exams</span></a></li>
                 <li><a href="results.php">📊 <span>Results</span></a></li>
                 <li><a href="fees.php">💰 <span>Fees</span></a></li>
+                <li><a href="reports.php">📑 <span>Reports</span></a></li>
                 <li><a href="admin_profile.php">⚙️ <span>Profile</span></a></li>
                 <li class="logout"><a href="../login_page/loginPage.php">🚪 <span>Logout</span></a></li>
             </ul>
@@ -98,27 +100,37 @@ $batches = $batchController->getAllBatches();
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($batches as $batch): ?>
+                        <?php if (empty($batches)): ?>
                             <tr>
-                                <td>#B<?= (int) $batch['id']; ?></td>
-                                <td><strong><?= htmlspecialchars($batch['name'], ENT_QUOTES, 'UTF-8'); ?></strong></td>
-                                <td><?= htmlspecialchars($batch['teacher_names'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td><?= htmlspecialchars($batch['start_date'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td><span class="student_count_badge">👥 <?= (int) $batch['student_count']; ?> Students</span></td>
-                                <td><span class="status_active"><?= htmlspecialchars(ucfirst($batch['status']), ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                <td>
-                                    <button class="btn_icon edit_btn" title="Edit" type="button">✏️</button>
-                                    <button class="btn_icon delete_btn" title="Delete" type="button">🗑️</button>
-                                </td>
+                                <td colspan="7" style="text-align:center; color:#6b7280; padding:24px;">No batches available.</td>
                             </tr>
-                        <?php endforeach; ?>
+                        <?php else: ?>
+                            <?php foreach ($batches as $batch): ?>
+                                <tr>
+                                    <td>#B<?= (int) $batch['id']; ?></td>
+                                    <td><strong><?= htmlspecialchars($batch['name'], ENT_QUOTES, 'UTF-8'); ?></strong></td>
+                                    <td><?= htmlspecialchars($batch['teacher_names'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td>
+                                        <div style="font-weight:600; color:#111827;"><?= htmlspecialchars($batch['schedule_time'], ENT_QUOTES, 'UTF-8'); ?></div>
+                                        <div style="font-size:12px; color:#6b7280;">📍 <?= htmlspecialchars($batch['room_number'], ENT_QUOTES, 'UTF-8'); ?> &bull; Start: <?= htmlspecialchars($batch['start_date'], ENT_QUOTES, 'UTF-8'); ?></div>
+                                    </td>
+                                    <td><span class="student_count_badge">👥 <?= (int) $batch['student_count']; ?> Students</span></td>
+                                    <td><span class="status_active"><?= htmlspecialchars(ucfirst($batch['status']), ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                    <td>
+                                        <a href="classes.php" class="btn_icon" title="View/Edit Routine" style="text-decoration:none;">📅</a>
+                                        <button class="btn_icon edit_btn" title="Edit" type="button">✏️</button>
+                                        <button class="btn_icon delete_btn" title="Delete" type="button">🗑️</button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
         </main>
     </div>
 
-    <!-- ৩. CREATE BATCH MODAL (পপ-আপ ফর্ম) -->
+    <!-- ৩. CREATE BATCH MODAL -->
     <div class="modal_overlay" id="batchModal">
         <div class="modal_box">
             <div class="modal_header">
@@ -126,6 +138,7 @@ $batches = $batchController->getAllBatches();
                 <button class="close_modal" id="closeModal">&times;</button>
             </div>
             <form class="modal_form" method="post">
+                <input type="hidden" name="action" value="add_batch">
                 <div class="form_group">
                     <label>Batch Name</label>
                     <input type="text" name="name" value="<?= htmlspecialchars($_POST['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. Batch A (HSC 2026)" minlength="2" maxlength="100" required>
@@ -140,6 +153,14 @@ $batches = $batchController->getAllBatches();
                             </option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+                <div class="form_group">
+                    <label>Class Schedule / Timing</label>
+                    <input type="text" name="schedule_time" value="<?= htmlspecialchars($_POST['schedule_time'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. Sat, Mon, Wed (10:00 AM - 11:30 AM)">
+                </div>
+                <div class="form_group">
+                    <label>Room / Venue</label>
+                    <input type="text" name="room_number" value="<?= htmlspecialchars($_POST['room_number'] ?? 'Room 101', ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. Room 101 / Lab 1">
                 </div>
                 <div class="form_group">
                     <label>Start Date</label>
@@ -196,7 +217,7 @@ $batches = $batchController->getAllBatches();
         });
 
         <?php if ($messageType === 'error'): ?>
-        batchModal.classList.add('show');
+            batchModal.classList.add('show');
         <?php endif; ?>
     </script>
 </body>

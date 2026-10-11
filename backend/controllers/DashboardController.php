@@ -84,6 +84,8 @@ class DashboardController {
 
         $stmt = $this->db->prepare(
             'SELECT batches.id, batches.name, batches.start_date, batches.status,
+                    COALESCE(batches.schedule_time, \'Not scheduled\') AS schedule_time,
+                    COALESCE(batches.room_number, \'Room 101\') AS room_number,
                 (SELECT COUNT(*) FROM enrollments WHERE enrollments.batch_id = batches.id AND enrollments.status = \'active\') AS student_count
              FROM batches
              INNER JOIN batch_teachers ON batch_teachers.batch_id = batches.id
@@ -188,11 +190,59 @@ class DashboardController {
         $stmt->execute([$studentId]);
         $recentAttendance = $stmt->fetchAll();
 
+        // Upcoming Classes from class_schedules
+        $upcomingClassTitle = '--';
+        $upcomingClassesList = [];
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT cs.id, cs.day_of_week, cs.start_time, cs.end_time, cs.room_number,
+                        batches.name AS batch_name, subjects.name AS subject_name, users.name AS teacher_name
+                 FROM class_schedules cs
+                 INNER JOIN enrollments ON enrollments.batch_id = cs.batch_id
+                 INNER JOIN batches ON batches.id = cs.batch_id
+                 INNER JOIN subjects ON subjects.id = cs.subject_id
+                 INNER JOIN teachers ON teachers.id = cs.teacher_id
+                 INNER JOIN users ON users.id = teachers.user_id
+                 WHERE enrollments.student_id = ? AND enrollments.status = 'active'
+                 ORDER BY FIELD(cs.day_of_week, 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'), cs.start_time ASC"
+            );
+            $stmt->execute([$studentId]);
+            $upcomingClassesList = $stmt->fetchAll();
+
+            if (!empty($upcomingClassesList)) {
+                $currentDay = date('l');
+                $days = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+                $currIdx = array_search($currentDay, $days, true);
+                if ($currIdx === false) {
+                    $currIdx = 0;
+                }
+
+                // Sort classes in order of nearest upcoming day and time
+                usort($upcomingClassesList, function($a, $b) use ($days, $currIdx) {
+                    $idxA = (array_search($a['day_of_week'], $days, true) - $currIdx + 7) % 7;
+                    $idxB = (array_search($b['day_of_week'], $days, true) - $currIdx + 7) % 7;
+                    if ($idxA === $idxB) {
+                        return strcmp($a['start_time'], $b['start_time']);
+                    }
+                    return $idxA - $idxB;
+                });
+
+                $firstClass = $upcomingClassesList[0];
+                $dayLabel = ($firstClass['day_of_week'] === $currentDay) ? 'Today' : substr($firstClass['day_of_week'], 0, 3);
+                $upcomingClassTitle = $dayLabel . ' ' . date('h:i A', strtotime($firstClass['start_time']));
+            }
+        } catch (Throwable $e) {
+            $upcomingClassTitle = '--';
+            $upcomingClassesList = [];
+        }
+
         return [
             'enrolledBatches' => $enrolledBatches,
             'attendanceRate' => $attendanceRate,
             'latestResult' => $latestResult,
             'upcomingExamTitle' => $upcomingExamTitle,
+            'upcomingClassTitle' => $upcomingClassTitle,
+            'upcomingClassesList' => $upcomingClassesList,
             'feeStatus' => $feeStatus,
             'upcomingExamsList' => $upcomingExamsList,
             'recentAttendance' => $recentAttendance,

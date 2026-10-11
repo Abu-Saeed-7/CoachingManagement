@@ -41,10 +41,12 @@ CoachingManagement/
 |   |   |-- AttendanceController.php     # Daily attendance marking & query logic
 |   |   |-- AuthController.php           # Login, authentication & logout
 |   |   |-- BatchController.php          # Batch creation, status & allocations
+|   |   |-- ClassController.php          # Class schedule & timetable management
 |   |   |-- DashboardController.php      # Role-based dashboard stats & overviews
 |   |   |-- ExamController.php           # Exam scheduling & subject linking
 |   |   |-- FeeController.php            # Monthly fee billing & status updates
 |   |   |-- ProfileController.php        # User profile view & update handling
+|   |   |-- ReportController.php         # Admin analytics, financial & academic reporting
 |   |   |-- ResultController.php         # Exam marks entry & grade calculation
 |   |   |-- StudentController.php        # Student registration & batch queries
 |   |   `-- TeacherController.php        # Teacher onboarding & allocations
@@ -68,9 +70,11 @@ CoachingManagement/
         |   |-- students.php/.css        # Student management & admission form
         |   |-- teachers.php/.css        # Faculty management & onboarding form
         |   |-- batches.php/.css         # Batch creation & teacher assignment
+        |   |-- classes.php/.css         # Class routines & timetable scheduling
         |   |-- exams.php/.css           # Examination setup & scheduling
         |   |-- results.php/.css         # Marks evaluation & grading form
         |   |-- fees.php/.css            # Student tuition collection & ledger
+        |   |-- reports.php/.css         # Admin executive reports & analytics hub
         |   `-- admin_profile.php/.css   # Admin account security settings
         |
         |-- Teacher DashBoard/
@@ -146,6 +150,7 @@ CoachingManagement/
 10. fees          : Monthly tuition fee billing and payment ledger.
 11. batch_teachers: Associative entity linking teachers to batches.
 12. batch_subjects: Associative entity linking subjects to batches.
+13. class_schedules: Weekly scheduled class routines per batch, subject and teacher.
 
 4.2 ENTITY RELATIONSHIPS & CARDINALITIES
 ----------------------------------------
@@ -155,6 +160,9 @@ CoachingManagement/
 - batches    -> enrollments    : 1 to Many [UNIQUE(student_id, batch_id)]
 - teachers  <-> batches        : Many to Many (via batch_teachers)
 - batches   <-> subjects       : Many to Many (via batch_subjects)
+- batches    -> class_schedules: 1 to Many
+- subjects   -> class_schedules: 1 to Many
+- teachers   -> class_schedules: 1 to Many
 - students   -> attendance     : 1 to Many [UNIQUE(student_id, batch_id, date)]
 - batches    -> exams          : 1 to Many
 - subjects   -> exams          : 1 to Many

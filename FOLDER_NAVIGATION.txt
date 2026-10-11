@@ -12,10 +12,12 @@ CoachingManagement/
 |   |   |-- AttendanceController.php     # Daily attendance marking & query logic
 |   |   |-- AuthController.php           # Login, authentication & logout
 |   |   |-- BatchController.php          # Batch creation, status & allocations
+|   |   |-- ClassController.php          # Class schedule & timetable management
 |   |   |-- DashboardController.php      # Role-based dashboard stats & overviews
 |   |   |-- ExamController.php           # Exam scheduling & subject linking
 |   |   |-- FeeController.php            # Monthly fee billing & status updates
 |   |   |-- ProfileController.php        # User profile view & update handling
+|   |   |-- ReportController.php         # Admin analytics, financial & academic reporting
 |   |   |-- ResultController.php         # Exam marks entry & grade calculation
 |   |   |-- StudentController.php        # Student registration & batch queries
 |   |   `-- TeacherController.php        # Teacher onboarding & allocations
@@ -39,9 +41,11 @@ CoachingManagement/
         |   |-- students.php/.css        # Student management & admission form
         |   |-- teachers.php/.css        # Faculty management & onboarding form
         |   |-- batches.php/.css         # Batch creation & teacher assignment
+        |   |-- classes.php/.css         # Class routines & timetable scheduling
         |   |-- exams.php/.css           # Examination setup & scheduling
         |   |-- results.php/.css         # Marks evaluation & grading form
         |   |-- fees.php/.css            # Student tuition collection & ledger
+        |   |-- reports.php/.css         # Admin executive reports & analytics hub
         |   `-- admin_profile.php/.css   # Admin account security settings
         |
         |-- Teacher DashBoard/

@@ -108,6 +108,8 @@ class ExamController {
     public function getStudentExamsAndClasses(int $studentId): array {
         $stmt = $this->db->prepare(
             'SELECT batches.id, batches.name, batches.start_date,
+                    COALESCE(batches.schedule_time, \'Not scheduled\') AS schedule_time,
+                    COALESCE(batches.room_number, \'Room 101\') AS room_number,
                 COALESCE((SELECT GROUP_CONCAT(users.name SEPARATOR \', \') 
                  FROM batch_teachers 
                  INNER JOIN teachers ON teachers.id = batch_teachers.teacher_id 
@@ -125,6 +127,28 @@ class ExamController {
         $stmt->execute([$studentId]);
         $enrolledBatches = $stmt->fetchAll();
 
+        // Query student's weekly routine from class_schedules
+        $classSchedules = [];
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT cs.id, cs.day_of_week, cs.start_time, cs.end_time, cs.room_number,
+                        batches.name AS batch_name, subjects.name AS subject_name,
+                        users.name AS teacher_name
+                 FROM class_schedules cs
+                 INNER JOIN enrollments ON enrollments.batch_id = cs.batch_id
+                 INNER JOIN batches ON batches.id = cs.batch_id
+                 INNER JOIN subjects ON subjects.id = cs.subject_id
+                 INNER JOIN teachers ON teachers.id = cs.teacher_id
+                 INNER JOIN users ON users.id = teachers.user_id
+                 WHERE enrollments.student_id = ? AND enrollments.status = \'active\'
+                 ORDER BY FIELD(cs.day_of_week, \'Saturday\', \'Sunday\', \'Monday\', \'Tuesday\', \'Wednesday\', \'Thursday\', \'Friday\'), cs.start_time ASC'
+            );
+            $stmt->execute([$studentId]);
+            $classSchedules = $stmt->fetchAll();
+        } catch (Throwable $e) {
+            $classSchedules = [];
+        }
+
         $stmt = $this->db->prepare(
             'SELECT exams.id, exams.name, exams.exam_date, exams.total_marks,
                     batches.name AS batch_name, subjects.name AS subject_name,
@@ -141,6 +165,7 @@ class ExamController {
 
         return [
             'enrolledBatches' => $enrolledBatches,
+            'classSchedules' => $classSchedules,
             'upcomingExams' => $upcomingExams,
             'exams' => $upcomingExams,
         ];

@@ -14,6 +14,7 @@ $studentController = new StudentController();
 
 $assignedBatches = $batchController->getTeacherBatches((int) $teacherId);
 $assignedStudents = $studentController->getTeacherStudents((int) $teacherId);
+$teacherSchedules = $batchController->getTeacherClassSchedules((int) $teacherId);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -63,8 +64,8 @@ $assignedStudents = $studentController->getTeacherStudents((int) $teacherId);
             <!-- PAGE HEADER -->
             <div class="page_header">
                 <div>
-                    <h1>My Assigned Batches</h1>
-                    <p>Overview of classes and students assigned under your instruction.</p>
+                    <h1>My Assigned Batches & Class Schedule</h1>
+                    <p>Overview of batches, timings, routines and students assigned under your instruction.</p>
                 </div>
             </div>
 
@@ -81,7 +82,8 @@ $assignedStudents = $studentController->getTeacherStudents((int) $teacherId);
                                     <?= htmlspecialchars(ucfirst($batch['status']), ENT_QUOTES, 'UTF-8'); ?>
                                 </span>
                             </div>
-                            <p style="color:#6b7280; font-size:13px; margin:0 0 16px 0;">Start Date: <strong><?= htmlspecialchars($batch['start_date'], ENT_QUOTES, 'UTF-8'); ?></strong></p>
+                            <p style="color:#4f46e5; font-size:13px; font-weight:600; margin:0 0 4px 0;">⏰ Timing: <?= htmlspecialchars($batch['schedule_time'], ENT_QUOTES, 'UTF-8'); ?></p>
+                            <p style="color:#6b7280; font-size:12px; margin:0 0 16px 0;">📍 Venue: <?= htmlspecialchars($batch['room_number'], ENT_QUOTES, 'UTF-8'); ?> &bull; Start Date: <?= htmlspecialchars($batch['start_date'], ENT_QUOTES, 'UTF-8'); ?></p>
                             <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f3f4f6; padding-top:12px;">
                                 <span style="font-size:13px; font-weight:600; color:#4f46e5;">👥 <?= (int) $batch['student_count']; ?> Students</span>
                                 <a href="teacher_students.php?batch_id=<?= (int)$batch['id']; ?>" style="color:#4f46e5; text-decoration:none; font-size:13px; font-weight:600;">View Students &rarr;</a>
@@ -90,6 +92,37 @@ $assignedStudents = $studentController->getTeacherStudents((int) $teacherId);
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
+
+            <!-- WEEKLY TEACHING ROUTINE TABLE -->
+            <?php if (!empty($teacherSchedules)): ?>
+                <div style="margin-top: 32px; background:#fff; border-radius:10px; border:1px solid #e5e7eb; padding:20px; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+                    <h3 style="font-size:18px; margin:0 0 16px 0; color:#111827;">📅 My Weekly Class Routine</h3>
+                    <div class="table_container" style="overflow-x:auto;">
+                        <table class="custom_table" style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr style="border-bottom:1px solid #e5e7eb; text-align:left;">
+                                    <th style="padding:10px 14px; font-size:13px; color:#4b5563;">Day</th>
+                                    <th style="padding:10px 14px; font-size:13px; color:#4b5563;">Batch</th>
+                                    <th style="padding:10px 14px; font-size:13px; color:#4b5563;">Subject</th>
+                                    <th style="padding:10px 14px; font-size:13px; color:#4b5563;">Class Time</th>
+                                    <th style="padding:10px 14px; font-size:13px; color:#4b5563;">Venue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($teacherSchedules as $ts): ?>
+                                    <tr style="border-bottom:1px solid #f3f4f6;">
+                                        <td style="padding:10px 14px; font-weight:600; color:#4f46e5;"><?= htmlspecialchars($ts['day_of_week'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td style="padding:10px 14px;"><span class="badge" style="background:#eef2ff; color:#4f46e5; padding:3px 8px; border-radius:12px; font-size:12px; font-weight:600;"><?= htmlspecialchars($ts['batch_name'], ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                        <td style="padding:10px 14px; font-weight:600;"><?= htmlspecialchars($ts['subject_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td style="padding:10px 14px;">⏰ <?= date('h:i A', strtotime($ts['start_time'])); ?> – <?= date('h:i A', strtotime($ts['end_time'])); ?></td>
+                                        <td style="padding:10px 14px; color:#6b7280;">📍 <?= htmlspecialchars($ts['room_number'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <!-- BATCH STUDENTS TABLE -->
             <div class="students_section" id="batchStudents" style="margin-top: 32px;">
