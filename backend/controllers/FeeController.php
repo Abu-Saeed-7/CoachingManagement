@@ -9,7 +9,54 @@ class FeeController {
         $this->db = $db ?? $GLOBALS['db'];
     }
 
+    /**
+     * Automatically ensure all active enrolled students have fee records (default 'unpaid')
+     * for every month they have been active up to the current month.
+     */
+    public function syncActiveStudentMonthlyFees(): int {
+        $sql = "SELECT DISTINCT e.student_id, e.enrollment_date 
+                FROM enrollments e 
+                JOIN students s ON s.id = e.student_id
+                WHERE e.status = 'active'";
+        $activeEnrollments = $this->db->query($sql)->fetchAll();
+
+        $currentMonth = date('Y-m-01');
+        $insertedCount = 0;
+
+        foreach ($activeEnrollments as $enr) {
+            $studentId = (int) $enr['student_id'];
+            $startDateStr = (!empty($enr['enrollment_date']) && $enr['enrollment_date'] !== '0000-00-00')
+                ? $enr['enrollment_date']
+                : date('Y-m-01');
+            $startMonthStr = date('Y-m-01', strtotime($startDateStr));
+
+            $cursor = strtotime($startMonthStr);
+            $end = strtotime($currentMonth);
+
+            while ($cursor <= $end) {
+                $monthDate = date('Y-m-01', $cursor);
+
+                $check = $this->db->prepare("SELECT id FROM fees WHERE student_id = ? AND month = ? LIMIT 1");
+                $check->execute([$studentId, $monthDate]);
+                if (!$check->fetch()) {
+                    $insert = $this->db->prepare(
+                        "INSERT INTO fees (student_id, amount, month, status, payment_date) 
+                         VALUES (?, 3000.00, ?, 'unpaid', NULL)"
+                    );
+                    $insert->execute([$studentId, $monthDate]);
+                    $insertedCount++;
+                }
+
+                $cursor = strtotime("+1 month", $cursor);
+            }
+        }
+
+        return $insertedCount;
+    }
+
     public function getFeeStats(): array {
+        $this->syncActiveStudentMonthlyFees();
+
         $totalCollected = (float) $this->db->query("SELECT COALESCE(SUM(amount), 0) FROM fees WHERE status = 'paid'")->fetchColumn();
         $pendingDues = (float) $this->db->query("SELECT COALESCE(SUM(amount), 0) FROM fees WHERE status = 'unpaid'")->fetchColumn();
         $totalInvoices = (int) $this->db->query("SELECT COUNT(*) FROM fees")->fetchColumn();
@@ -31,6 +78,8 @@ class FeeController {
     }
 
     public function getAllFees(): array {
+        $this->syncActiveStudentMonthlyFees();
+
         return $this->db->query(
             'SELECT fees.id, users.name AS student_name, students.roll,
                 COALESCE((

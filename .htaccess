@@ -1,0 +1,11 @@
+# 1. Prevent direct access to sensitive configuration files (.env, git, etc.)
+<FilesMatch "^\.env|\.git">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# 2. Disable directory listing for security
+Options -Indexes
+
+# 3. Default index file
+DirectoryIndex index.php

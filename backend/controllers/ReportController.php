@@ -13,8 +13,6 @@ class ReportController {
      * Get common dropdown options for report filters.
      */
     public function getFilterOptions(): array {
-        $this->ensureSampleExams();
-
         $batches = $this->db->query(
             "SELECT id, name, status FROM batches ORDER BY status = 'active' DESC, name ASC"
         )->fetchAll();
@@ -45,47 +43,14 @@ class ReportController {
     }
 
     /**
-     * Helper to guarantee multi-month academic exam records exist
-     */
-    private function ensureSampleExams(): void {
-        try {
-            $check = $this->db->query("SELECT COUNT(*) FROM exams WHERE exam_date >= '2026-10-01'")->fetchColumn();
-            if ((int)$check === 0) {
-                $this->db->exec("
-                    INSERT INTO exams (id, batch_id, subject_id, name, exam_date, total_marks) VALUES
-                    (6, 1, 1, 'Database Final Exam', '2026-10-04', 100.00),
-                    (7, 1, 2, 'Data Structures Assessment', '2026-10-06', 100.00),
-                    (8, 2, 3, 'Network Security Test', '2026-10-08', 50.00),
-                    (9, 3, 4, 'React & Node Project Exam', '2026-10-10', 100.00)
-                    ON DUPLICATE KEY UPDATE name=VALUES(name);
-
-                    INSERT INTO results (id, student_id, exam_id, marks, grade) VALUES
-                    (21, 1, 6, 92.00, 'A+'),
-                    (22, 2, 6, 84.00, 'A'),
-                    (23, 4, 6, 96.00, 'A+'),
-                    (24, 6, 6, 32.00, 'F'),
-                    (25, 1, 7, 88.00, 'A+'),
-                    (26, 4, 7, 78.00, 'A'),
-                    (27, 5, 7, 45.00, 'C'),
-                    (28, 6, 7, 28.00, 'F'),
-                    (29, 6, 8, 44.00, 'A+'),
-                    (30, 7, 8, 38.00, 'A'),
-                    (31, 8, 8, 16.00, 'F'),
-                    (32, 8, 9, 91.00, 'A+'),
-                    (33, 9, 9, 74.00, 'B'),
-                    (34, 10, 9, 82.00, 'A')
-                    ON DUPLICATE KEY UPDATE marks=VALUES(marks), grade=VALUES(grade);
-                ");
-            }
-        } catch (Throwable $e) {
-            // Ignore database restrictions gracefully
-        }
-    }
-
-    /**
      * 1. Financial & Fee Collection Reports
      */
     public function getFinancialReport(array $filters = []): array {
+        // Ensure all active enrolled students have their monthly fee invoices synchronized
+        require_once __DIR__ . '/FeeController.php';
+        $feeController = new FeeController($this->db);
+        $feeController->syncActiveStudentMonthlyFees();
+
         $batchId = !empty($filters['batch_id']) ? (int) $filters['batch_id'] : null;
         $month = !empty($filters['month']) ? trim($filters['month']) : null;
         $status = !empty($filters['status']) ? trim($filters['status']) : null;
@@ -486,8 +451,6 @@ class ReportController {
      * 3. Academic & Examination Performance Reports
      */
     public function getExamReport(array $filters = []): array {
-        $this->ensureSampleExams();
-
         $batchId = !empty($filters['batch_id']) ? (int) $filters['batch_id'] : null;
         $subjectId = !empty($filters['subject_id']) ? (int) $filters['subject_id'] : null;
         $month = !empty($filters['month']) ? trim($filters['month']) : null;

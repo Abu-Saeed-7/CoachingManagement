@@ -1,0 +1,356 @@
+================================================================================
+           কোচিং ম্যানেজমেন্ট সিস্টেম — রিপোর্ট কোয়েরি ও ক্যালকুলেশন নির্দেশিকা
+================================================================================
+
+ফাইল নাম: REPORT_QUERIES_AND_CALCULATIONS.txt
+সিস্টেম মডিউল: অ্যাডমিন রিপোর্ট ও অ্যানালিটিক্স ইঞ্জিন (Admin Reports Engine)
+কন্ট্রোলার ফাইল: backend/controllers/ReportController.php
+ভিউ ফাইল: frontend/pages/Admin DashBoard/reports.php
+ডেটাবেজ: MySQL (InnoDB, PHP PDO)
+তারিখ: অক্টোবর ২০২৬
+
+--------------------------------------------------------------------------------
+সূচিপত্র:
+১. রিপোর্ট সিস্টেমের মূল কাজের নিয়ম (Architecture Overview)
+২. ফিল্টারে স্বয়ংক্রিয়ভাবে মাস কীভাবে আসে? (Dynamic Month Filter)
+৩. মডিউল ১: ফি কালেকশন ও আর্থিক রিপোর্ট (Financial Report)
+৪. মডিউল ২: উপস্থিতি ও অনুপস্থিতি অ্যানালিটিক্স (Attendance Report)
+৫. মডিউল ৩: পরীক্ষা ও একাডেমিক ফলাফল মূল্যায়ন (Exam & Results Report)
+৬. মডিউল ৪: ব্যাচ, নতুন ভর্তি ও শিক্ষক অপারেশনাল রিপোর্ট (Operations Report)
+৭. শূন্য দিয়ে ভাগ ও সিস্টেম ক্র্যাশ প্রতিরোধ (Safe Math Logic)
+৮. এক নজরে সকল ক্যালকুলেশন সূত্র (Quick Formula Summary)
+================================================================================
+
+
+১. রিপোর্ট সিস্টেমের মূল কাজের নিয়ম (Architecture Overview)
+--------------------------------------------------------------------------------
+কন্ট্রোলারটি সম্পূর্ণ আধুনিক MVC (Model-View-Controller) নিয়ম অনুযায়ী তৈরি করা হয়েছে:
+
+* পিওর অ্যানালাইটিক্যাল কোয়েরি (SELECT Only):
+  রিপোর্ট কন্ট্রোলারে কোনো INSERT, UPDATE বা DELETE কুয়েরি চালানো হয় না। এটি শুধুমাত্র 
+  ডেটাবেজ থেকে তথ্য সংগ্রহ ও বিশ্লেষণ করে।
+
+* ডেটাবেজ লেভেলে হিসাব-নিকাশ:
+  যোগফল (SUM), গণনা (COUNT), গড় (AVG) এবং গ্রুপভিত্তিক ডেটাগুলো সরাসরি MySQL 
+  ডেটাবেজের ভেতরে সম্পন্ন হয়। ফলে বড় ডেটাবেজেও রিপোর্ট নিমেষেই লোড হয়।
+
+* PHP লেভেলে পার্সেন্টেজ ও ফরম্যাটিং:
+  শতকরা হার (%), দশমিক রাউন্ডিং (১ স্থান পর্যন্ত) এবং ডাইনামিক ফিল্টারিং প্যারামিটারগুলো 
+  PHP-তে প্রসেস করে ফ্রন্টএন্ডে পাঠানো হয়।
+
+* ডাইনামিক ফিল্টারিং:
+  মাস (Month), ব্যাচ (Batch), বিষয় (Subject) বা তারিখ ফিল্টার পরিবর্তন করলে সব 
+  কেপিআই কার্ড, চার্ট ও টেবিল সাথে সাথে রিয়্যাক্টিভলি আপডেট হয়।
+
+
+
+২. ফিল্টারে স্বয়ংক্রিয়ভাবে মাস কীভাবে আসে? (Dynamic Month Filter)
+--------------------------------------------------------------------------------
+কোচিং সফটওয়্যারে কোনো মাসের নাম বা সাল কোডের ভেতরে ফিক্সড বা হার্ডকোড করা নেই।
+ডেটাবেজে যে যে মাসে লেনদেন, হাজিরা, পরীক্ষা বা ভর্তি হয়েছে, স্বয়ংক্রিয়ভাবে সেই 
+মাসগুলো ফিল্টার ড্রপডাউনে চলে আসে।
+
+ব্যবহৃত SQL কোয়েরি:
+--------------------
+SELECT DISTINCT ym AS value, DATE_FORMAT(CONCAT(ym, '-01'), '%M %Y') AS label 
+FROM (
+    SELECT DATE_FORMAT(month, '%Y-%m') AS ym FROM fees
+    UNION
+    SELECT DATE_FORMAT(date, '%Y-%m') AS ym FROM attendance
+    UNION
+    SELECT DATE_FORMAT(exam_date, '%Y-%m') AS ym FROM exams
+    UNION
+    SELECT DATE_FORMAT(enrollment_date, '%Y-%m') AS ym FROM enrollments
+) all_months
+WHERE ym IS NOT NULL
+ORDER BY value DESC;
+
+ব্যাখ্যা:
+* UNION ব্যবহারের মাধ্যমে চারটি ভিন্ন টেবিলের সমস্ত মাসকে এক করে ডুপ্লিকেট দূর করা হয়।
+* DATE_FORMAT এর মাধ্যমে '2026-09' কে ব্যবহারকারীর পড়ার সুবিধার জন্য "September 2026" 
+  হিসেবে রূপান্তর করা হয়।
+* ORDER BY value DESC দিয়ে সাম্প্রতিক মাসগুলোকে সবার উপরে রাখা হয়।
+
+
+
+৩. মডিউল ১: ফি কালেকশন ও আর্থিক রিপোর্ট (Financial Report)
+--------------------------------------------------------------------------------
+ফাংশন: getFinancialReport()
+
+(ক) মূল আর্থিক কেপিআই (KPIs) হিসাব করার কোয়েরি:
+-----------------------------------------------
+SELECT 
+    COALESCE(SUM(CASE WHEN fees.status = 'paid' THEN fees.amount ELSE 0 END), 0) AS total_collected,
+    COALESCE(SUM(CASE WHEN fees.status = 'unpaid' THEN fees.amount ELSE 0 END), 0) AS total_pending,
+    COALESCE(SUM(CASE WHEN fees.status = 'partial' THEN fees.amount ELSE 0 END), 0) AS total_partial,
+    COUNT(*) AS total_invoices
+FROM fees 
+WHERE [ফিল্টার শর্তাবলি];
+
+গাণিতিক সূত্র ও নিয়ম:
+১. মোট ইনভয়েস বিল = মোট আদায়কৃত টাকা + মোট বাকি বা বকেয়া + আংশিক পরিশোধিত টাকা
+   কোড: $totalSum = $totalCollected + $totalPending + $totalPartial;
+
+২. ফি কালেকশন রেট বা আদায়ের হার (%):
+   সূত্র: (মোট আদায়কৃত টাকা / মোট ইনভয়েস বিল) * ১০০
+   কোড: $collectionRate = $totalSum > 0 ? round(($totalCollected / $totalSum) * 100, 1) : 0;
+   (টার্গেট: ৯০% বা তার বেশি হলে ভালো কালেকশন হিসেবে ধরা হয়)
+
+
+(খ) মাসিক রেভিনিউ ট্রেন্ড ও গ্রাফ (Monthly Revenue Trend):
+---------------------------------------------------------
+গ্রাফে আদায় ও বকেয়ার ডুয়েল বার চার্ট দেখানোর কোয়েরি:
+
+SELECT 
+    DATE_FORMAT(fees.month, '%Y-%m') AS ym,
+    DATE_FORMAT(fees.month, '%b %Y') AS month_name,
+    COALESCE(SUM(CASE WHEN fees.status = 'paid' THEN fees.amount ELSE 0 END), 0) AS collected,
+    COALESCE(SUM(CASE WHEN fees.status = 'unpaid' THEN fees.amount ELSE 0 END), 0) AS unpaid
+FROM fees
+WHERE [ফিল্টার শর্তাবলি]
+GROUP BY DATE_FORMAT(fees.month, '%Y-%m'), DATE_FORMAT(fees.month, '%b %Y')
+ORDER BY ym ASC;
+
+* ফিল্টার লজিক:
+  ব্যবহারকারী যখন কোনো নির্দিষ্ট মাস (যেমন: সেপ্টেম্বর ২০২৬) সিলেক্ট করে, তখন গ্রাফটি 
+  শুধুমাত্র সেই নির্বাচিত মাসের মোট আদায় ও বকেয়া দেখায়। আর কোনো ফিল্টার না থাকলে 
+  বিগত ১২ মাসের হিসাব দেখায়।
+
+
+(গ) জরুরি ফি বকেয়া তালিকা (Fee Defaulters List):
+------------------------------------------------
+যেসব শিক্ষার্থীর ফি বাকি বা আংশিক বাকি রয়েছে:
+
+SELECT 
+    fees.id AS fee_id,
+    users.name AS student_name,
+    students.roll,
+    students.guardian_phone,
+    fees.month,
+    fees.amount,
+    fees.status
+FROM fees
+JOIN students ON students.id = fees.student_id
+JOIN users ON users.id = students.user_id
+WHERE fees.status IN ('unpaid', 'partial')
+  AND [ফিল্টার শর্তাবলি]
+ORDER BY fees.month DESC, fees.amount DESC
+LIMIT 100;
+
+
+(ঘ) স্বয়ংক্রিয় ফি জেনারেশন (Auto-Fee Generation for Active Enrolled Students):
+-----------------------------------------------------------------------------
+* এনরোলমেন্টের সময় অটো-ফি:
+  StudentController-এ যখন নতুন কোনো ছাত্রকে ব্যাচে এনরোল করা হয় (enrollments.status = 'active'), 
+  তখনই ওই চলতি মাসের জন্য স্বয়ংক্রিয়ভাবে একটি ৩০০০ টাকার ফি রেকর্ড তৈরি হয় যার 
+  স্ট্যাটাস থাকে 'unpaid'।
+
+* সক্রিয় থাকা পর্যন্ত স্বয়ংক্রিয় মাসিক ইনভয়েস:
+  যতদিন পর্যন্ত একজন শিক্ষার্থী active অবস্থায় থাকবে, FeeController-এর 
+  syncActiveStudentMonthlyFees() মেথডটি প্রতি মাসের ১ তারিখে ওই শিক্ষার্থীর জন্য 
+  স্বয়ংক্রিয়ভাবে চলতি মাসের unpaid ইনভয়েস তৈরি করে রাখে। ফলে শিক্ষার্থী ফি পরিশোধ 
+  না করা পর্যন্ত সে বকেয়া ও ডিফল্টার তালিকায় নির্ভুলভাবে প্রদর্শিত হয়।
+
+
+
+
+৪. মডিউল ২: উপস্থিতি ও অনুপস্থিতি অ্যানালিটিক্স (Attendance Report)
+--------------------------------------------------------------------------------
+ফাংশন: getAttendanceReport()
+
+(ক) উপস্থিতি কেপিআই হিসাব করার কোয়েরি:
+--------------------------------------
+SELECT 
+    COUNT(*) AS total_logs,
+    COALESCE(SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END), 0) AS present_count,
+    COALESCE(SUM(CASE WHEN a.status = 'absent' THEN 1 ELSE 0 END), 0) AS absent_count,
+    COALESCE(SUM(CASE WHEN a.status = 'late' THEN 1 ELSE 0 END), 0) AS late_count
+FROM attendance a
+WHERE [ফিল্টার শর্তাবলি];
+
+গাণিতিক সূত্র:
+১. উপস্থিতির হার (%) = (মোট উপস্থিত ছাত্র সংখ্যা / মোট হাজিরা এন্ট্রি) * ১০০
+   কোড: $presentRate = $totalLogs > 0 ? round(($presentCount / $totalLogs) * 100, 1) : 0;
+
+২. অনুপস্থিতির হার (%) = (মোট অনুপস্থিত ছাত্র সংখ্যা / মোট হাজিরা এন্ট্রি) * ১০০
+   কোড: $absentRate = $totalLogs > 0 ? round(($absentCount / $totalLogs) * 100, 1) : 0;
+
+৩. দেরিতে আসার হার (%) = (দেরিতে আসা ছাত্র সংখ্যা / মোট হাজিরা এন্ট্রি) * ১০০
+   কোড: $lateRate = $totalLogs > 0 ? round(($lateCount / $totalLogs) * 100, 1) : 0;
+
+
+(খ) ক্রনিক অনুপস্থিতি / ড্রপআউট ঝুঁকি সতর্কতা (Chronic Absenteeism Alert):
+------------------------------------------------------------------------
+যেসব শিক্ষার্থীর ক্লাসে উপস্থিতি ৮০% এর নিচে অথবা ফিল্টার করা সময়ে যারা 
+১ বা একাধিক দিন অনুপস্থিত ছিল, তাদের চিহ্নিত করার কোয়েরি:
+
+SELECT 
+    s.id AS student_id,
+    u.name AS student_name,
+    s.roll,
+    s.guardian_phone,
+    COUNT(a.id) AS total_sessions,
+    COALESCE(SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END), 0) AS present_count,
+    COALESCE(SUM(CASE WHEN a.status = 'absent' THEN 1 ELSE 0 END), 0) AS absent_count
+FROM students s
+JOIN users u ON u.id = s.user_id
+JOIN attendance a ON a.student_id = s.id
+WHERE [ফিল্টার শর্তাবলি]
+GROUP BY s.id, u.name, s.roll, s.guardian_phone
+HAVING (present_count / NULLIF(total_sessions, 0)) * 100 < 80 OR absent_count >= 1
+ORDER BY absent_count DESC, total_sessions DESC
+LIMIT 50;
+
+* সুবিধা: সরাসরি অভিভাবকের ফোন নম্বর (guardian_phone) থাকায় সেন্টারের স্টাফরা 
+  দ্রুত কল দিয়ে যোগাযোগ করতে পারেন।
+
+
+
+৫. মডিউল ৩: পরীক্ষা ও একাডেমিক ফলাফল মূল্যায়ন (Exam & Results Report)
+--------------------------------------------------------------------------------
+ফাংশন: getExamReport()
+
+(ক) পরীক্ষার সার্বিক কেপিআই ও পাসের হার:
+----------------------------------------
+SELECT 
+    COUNT(DISTINCT e.id) AS total_exams,
+    COUNT(r.id) AS total_results,
+    ROUND(COALESCE(AVG(r.marks), 0), 1) AS avg_marks,
+    COALESCE(SUM(CASE WHEN r.marks >= (e.total_marks * 0.4) THEN 1 ELSE 0 END), 0) AS passed_count,
+    COALESCE(SUM(CASE WHEN r.marks < (e.total_marks * 0.4) THEN 1 ELSE 0 END), 0) AS failed_count
+FROM exams e
+LEFT JOIN results r ON r.exam_id = e.id
+WHERE [ফিল্টার শর্তাবলি];
+
+গাণিতিক সূত্র ও নিয়মাবলী:
+১. পাস মার্কের নিয়ম: 
+   পরীক্ষায় মোট নম্বরের ন্যূনতম ৪০% বা তার বেশি পেলে পাস হিসেবে ধরা হয়।
+   শর্ত: r.marks >= (e.total_marks * 0.4)
+
+২. পাসের হার (%):
+   সূত্র: (মোট পাস করা ছাত্র / মোট পরীক্ষায় অংশ নেওয়া ছাত্র) * ১০০
+   কোড: $passRate = $totalResults > 0 ? round(($passedCount / $totalResults) * 100, 1) : 0;
+
+৩. পরীক্ষার গড় নম্বর:
+   AVG(r.marks) দিয়ে বের করে দশমিকের পর ১ ঘর পর্যন্ত রাউন্ড করা হয়।
+
+
+(খ) সুশৃঙ্খল গ্রেড ডিস্ট্রিবিউশন (Grade Distribution):
+------------------------------------------------------
+গ্রাফে গ্রেড দেখানোর সময় সঠিক শিক্ষাগত ক্রমানুসারে সাজানোর জন্য FIELD() ব্যবহার করা হয়েছে:
+
+SELECT 
+    COALESCE(r.grade, 'Ungraded') AS grade_name,
+    COUNT(r.id) AS grade_count
+FROM exams e
+JOIN results r ON r.exam_id = e.id
+WHERE [ফিল্টার শর্তাবলি]
+GROUP BY r.grade
+ORDER BY FIELD(r.grade, 'A+', 'A', 'A-', 'B', 'C', 'D', 'F');
+
+
+(গ) মেধা তালিকা ও দুর্বল শিক্ষার্থী সনাক্তকরণ:
+---------------------------------------------
+১. মেধা তালিকা (Merit List / Top Performers):
+   প্রাপ্ত নম্বরের শতকরা হারের ভিত্তিতে প্রথম সারির ছাত্রদের সাজানো হয়:
+   শতকরা নম্বর = (প্রাপ্ত নম্বর / পরীক্ষার পূর্ণমান) * ১০০
+   কোয়েরিতে: ORDER BY percentage DESC, r.marks DESC
+
+২. দুর্বল শিক্ষার্থী তালিকা (Academic Risk / Low Marks Alert):
+   যেসকল শিক্ষার্থী পরীক্ষায় ৫০% এর কম নম্বর পেয়েছে অথবা 'F' গ্রেড পেয়েছে:
+   শর্ত: WHERE (r.marks < (e.total_marks * 0.5) OR r.grade = 'F')
+   সাজানো: ORDER BY percentage ASC (সবচেয়ে কম নম্বর পাওয়া ছাত্ররা আগে আসবে)
+
+
+
+৬. মডিউল ৪: ব্যাচ, নতুন ভর্তি ও শিক্ষক অপারেশনাল রিপোর্ট (Operations Report)
+--------------------------------------------------------------------------------
+ফাংশন: getOperationsReport()
+
+(ক) নতুন ভর্তি বনাম বর্তমান সক্রিয় শিক্ষার্থী:
+--------------------------------------------
+* মাস ফিল্টার থাকলে:
+  সেই নির্বাচিত মাসে কতজন নতুন শিক্ষার্থী ভর্তি হয়েছে তা গণনা করে লেবেল দেওয়া হয় 
+  "New Admissions in [Month Name]"।
+  কোয়েরি: SELECT COUNT(*) FROM enrollments WHERE DATE_FORMAT(enrollment_date, '%Y-%m') = ?;
+
+* মাস ফিল্টার না থাকলে:
+  বর্তমানে সেন্টারে মোট কতজন শিক্ষার্থী সক্রিয়ভাবে অধ্যয়নরত তা দেখানো হয়।
+  কোয়েরি: SELECT COUNT(*) FROM enrollments WHERE status = 'active';
+
+
+(খ) মোট কতটি ক্লাস সম্পন্ন হয়েছে (Classes Conducted):
+-----------------------------------------------------
+কোচিং সেন্টারে প্রকৃতপক্ষে মোট কয়টি ক্লাস অনুষ্ঠিত হয়েছে তা বের করার কোয়েরি:
+
+SELECT COUNT(DISTINCT a.batch_id, a.date) 
+FROM attendance a 
+WHERE [তারিখ ও ব্যাচ ফিল্টার];
+
+ব্যাখ্যা:
+COUNT(DISTINCT batch_id, date) ব্যবহার করার কারণে একটি ক্লাসের ২০ জন ছাত্রের 
+উপস্থিতি ডাটাবেজে এন্ট্রি থাকলেও সিস্টেম তাকে ২০টি আলাদা ক্লাস না ধরে 
+সঠিকভাবে ১টি ক্লাস হিসেবেই গণনা করে।
+
+
+(গ) শিক্ষকদের কাজের চাপ ও লোড বিশ্লেষণ (Teacher Workload):
+----------------------------------------------------------
+প্রতিটি শিক্ষক কয়টি ব্যাচে নিযুক্ত আছেন, সপ্তাহে তার কয়টি ক্লাস বরাদ্দ এবং ওই মাসে 
+তিনি প্রকৃতপক্ষে কয়টি ক্লাস নিয়েছেন:
+
+SELECT 
+    t.id,
+    u.name AS teacher_name,
+    t.subject_specialist,
+    COUNT(DISTINCT bt.batch_id) AS assigned_batches,
+    (
+        SELECT COUNT(*) 
+        FROM class_schedules cs 
+        WHERE cs.teacher_id = t.id
+    ) AS weekly_classes,
+    (
+        SELECT COUNT(DISTINCT a.date, a.batch_id)
+        FROM attendance a
+        JOIN batch_teachers bt2 ON bt2.batch_id = a.batch_id AND bt2.teacher_id = t.id
+        WHERE [তারিখ ফিল্টার]
+    ) AS period_sessions
+FROM teachers t
+JOIN users u ON u.id = t.user_id
+LEFT JOIN batch_teachers bt ON bt.teacher_id = t.id
+GROUP BY t.id, u.name, t.phone, t.subject_specialist
+ORDER BY assigned_batches DESC;
+
+
+
+৭. শূন্য দিয়ে ভাগ ও সিস্টেম ক্র্যাশ প্রতিরোধ (Safe Math Logic)
+--------------------------------------------------------------------------------
+যেকোনো ভাগ অঙ্কে হর (Denominator) যদি কখনো ০ (শূন্য) হয়, তবে ডাটাবেজ ক্র্যাশ 
+অথবা Division by Zero Fatal Error হতে পারে। এই ঝুঁকি এড়াতে সিস্টেমে দুই স্তরের 
+নিরাপত্তা রাখা হয়েছে:
+
+১. SQL লেভেলে NULLIF() ও COALESCE():
+   NULLIF(total, 0) ব্যবহার করায় হর ০ হলে MySQL ক্র্যাশ না করে নিরাপদে NULL রিটার্ন করে।
+   আর COALESCE(..., 0) ব্যবহারের ফলে কোনো ফিল্ডে ডেটা না থাকলে ফাঁকা থাকার বদলে ০ আসে।
+   উদাহরণ: SELECT (present_count / NULLIF(total_sessions, 0)) * 100 AS safe_rate
+
+২. PHP লেভেলে টার্নারি গার্ড:
+   ভাগ করার আগে সবসময় চেক করা হয় হর ০ এর বেশি কি না:
+   $rate = $total > 0 ? round(($count / $total) * 100, 1) : 0;
+
+
+
+৮. এক নজরে সকল ক্যালকুলেশন সূত্র (Quick Formula Summary)
+--------------------------------------------------------------------------------
+১. কালেকশন রেট (%) = (মোট আদায়কৃত টাকা / মোট ইনভয়েস বিল) * ১০০
+২. উপস্থিতির হার (%) = (উপস্থিত ছাত্র সংখ্যা / মোট হাজিরা এন্ট্রি) * ১০০
+৩. অনুপস্থিতির হার (%) = (অনুপস্থিত ছাত্র সংখ্যা / মোট হাজিরা এন্ট্রি) * ১০০
+৪. দেরিতে আসার হার (%) = (দেরিতে আসা ছাত্র সংখ্যা / মোট হাজিরা এন্ট্রি) * ১০০
+৫. ক্রনিক অনুপস্থিতি = উপস্থিতি < ৮০% অথবা অনুপস্থিতি >= ১ দিন
+৬. পরীক্ষার পাস মার্ক = মোট নম্বরের ৪০% (r.marks >= total_marks * 0.40)
+৭. পাসের হার (%) = (পাস করা ছাত্র সংখ্যা / মোট পরীক্ষার্থী) * ১০০
+৮. প্রাপ্ত শতকরা নম্বর = (প্রাপ্ত নম্বর / পরীক্ষার মোট নম্বর) * ১০০
+৯. দুর্বল শিক্ষার্থী অ্যালার্ট = নম্বর < ৫০% অথবা গ্রেড = 'F'
+১০. সম্পন্ন হওয়া ক্লাস = COUNT(DISTINCT batch_id, date)
+১১. গড় ব্যাচ সাইজ = মোট সক্রিয় শিক্ষার্থী / মোট সক্রিয় ব্যাচ সংখ্যা
+================================================================================
+* এই ফাইলটি যেকোনো টেক্সট এডিটর (যেমন: Notepad) দিয়ে সহজে পড়া যাবে। *

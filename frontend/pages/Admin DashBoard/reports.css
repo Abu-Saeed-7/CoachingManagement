@@ -646,6 +646,12 @@
     text-decoration: underline;
 }
 
+/* PRINT-ONLY OFFICIAL HEADER/FOOTER (hidden on screen) */
+.print_only_header,
+.print_only_footer {
+    display: none;
+}
+
 /* ========================================================
    PRINT STYLES
    ======================================================== */
@@ -660,7 +666,9 @@
     .report_header_actions,
     .report_tabs_container,
     .filter_card,
+    .report_page_header,
     .table_search_wrap,
+    .chart_tooltip,
     .btn_call,
     .action_col {
         display: none !important;
@@ -676,25 +684,107 @@
         width: 100% !important;
     }
 
+    /* Print ONLY the currently active tab, not all 4 tabs */
     .report_tab_pane {
+        display: none !important;
+    }
+
+    .report_tab_pane.active {
         display: block !important;
-        page-break-after: always;
-        margin-bottom: 30px;
+        page-break-after: auto;
+        margin-bottom: 0;
+    }
+
+    /* Unclip scrolled tables so full Ledger/Log prints instead of 220px */
+    .table_scroll {
+        overflow: visible !important;
+        max-height: none !important;
+    }
+
+    .analytics_box .table_scroll {
+        max-height: none !important;
     }
 
     .report_section {
         box-shadow: none !important;
         border: 1px solid #cccccc !important;
+        overflow: visible !important;
+        break-inside: auto;
     }
 
     .kpi_card {
         border: 1px solid #cccccc !important;
         box-shadow: none !important;
+        break-inside: avoid;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
-    .report_page_header h1::after {
-        content: " - Official Print Copy";
-        font-size: 14px;
-        color: #555555;
+    thead {
+        display: table-header-group;
+    }
+
+    .report_table tr {
+        page-break-inside: avoid;
+    }
+
+    .chart_wrapper canvas {
+        max-width: 100% !important;
+    }
+
+    /* Official print header/footer — clearly shows WHICH report part this PDF is */
+    .print_only_header {
+        display: block !important;
+        text-align: center;
+        border-bottom: 3px double #111827;
+        padding-bottom: 12px;
+        margin-bottom: 16px;
+    }
+
+    .print_only_header .print_brand {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        color: #4b5563;
+    }
+
+    .print_only_header .print_title {
+        font-size: 22px;
+        font-weight: 800;
+        color: #000000;
+        margin: 4px 0;
+    }
+
+    .print_only_header .print_meta {
+        font-size: 12px;
+        color: #374151;
+    }
+
+    .print_only_header .print_sep {
+        margin: 0 6px;
+    }
+
+    .print_only_footer {
+        display: block !important;
+        text-align: center;
+        font-size: 11px;
+        color: #6b7280;
+        border-top: 1px solid #d1d5db;
+        padding-top: 8px;
+        margin-top: 16px;
+    }
+
+    /* Keep active filters visible in print, printer-friendly */
+    .active_filter_bar {
+        background: #ffffff !important;
+        border: 1px solid #9ca3af !important;
+        color: #000000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .filter_chip {
+        border: 1px solid #6b7280 !important;
+        color: #000000 !important;
     }
 }

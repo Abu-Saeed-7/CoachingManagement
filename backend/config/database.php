@@ -1,70 +1,78 @@
 <?php
-$host = "localhost";
-$dbname = "coaching_management";
-$username = "root";
-$password = "";
-
-try{
-    $db = new PDO(
-        "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
-        $username,
-        $password
-    );
-    
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-
-    // Auto-migrate schema updates for classes and schedules (safe idempotency)
-    try {
-        // 1. Ensure batches columns schedule_time & room_number exist
-        $batchCols = $db->query("SHOW COLUMNS FROM `batches` LIKE 'schedule_time'")->fetch();
-        if (!$batchCols) {
-            $db->exec("ALTER TABLE `batches` ADD COLUMN `schedule_time` VARCHAR(150) NULL DEFAULT 'Sat, Mon, Wed (10:00 AM - 11:30 AM)' AFTER `start_date`");
+// 1. Lightweight .env file loader for local or custom environments
+$envPath = __DIR__ . '/../../.env';
+if (file_exists($envPath)) {
+    $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
         }
-        $roomCols = $db->query("SHOW COLUMNS FROM `batches` LIKE 'room_number'")->fetch();
-        if (!$roomCols) {
-            $db->exec("ALTER TABLE `batches` ADD COLUMN `room_number` VARCHAR(50) NULL DEFAULT 'Room 101' AFTER `schedule_time`");
-        }
-
-        // 2. Ensure class_schedules table exists
-        $db->exec("
-            CREATE TABLE IF NOT EXISTS `class_schedules` (
-                `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
-                `batch_id` BIGINT NOT NULL,
-                `subject_id` BIGINT NOT NULL,
-                `teacher_id` BIGINT NOT NULL,
-                `day_of_week` ENUM('Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday') NOT NULL,
-                `start_time` TIME NOT NULL,
-                `end_time` TIME NOT NULL,
-                `room_number` VARCHAR(50) DEFAULT 'Room 101',
-                `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-        ");
-
-        // 3. Seed initial schedules if empty and batches exist
-        $scheduleCount = (int)$db->query("SELECT COUNT(*) FROM `class_schedules`")->fetchColumn();
-        if ($scheduleCount === 0) {
-            $hasBatches = (int)$db->query("SELECT COUNT(*) FROM `batches`")->fetchColumn();
-            if ($hasBatches > 0) {
-                $db->exec("
-                    INSERT INTO `class_schedules` (`batch_id`, `subject_id`, `teacher_id`, `day_of_week`, `start_time`, `end_time`, `room_number`) VALUES
-                    (1, 1, 1, 'Saturday', '10:00:00', '11:30:00', 'Room 101'),
-                    (1, 2, 2, 'Monday', '10:00:00', '11:30:00', 'Room 102'),
-                    (1, 1, 1, 'Wednesday', '10:00:00', '11:30:00', 'Room 101'),
-                    (2, 3, 2, 'Sunday', '11:30:00', '13:00:00', 'Room 103'),
-                    (2, 3, 2, 'Tuesday', '11:30:00', '13:00:00', 'Room 103'),
-                    (3, 4, 3, 'Saturday', '14:00:00', '15:30:00', 'Lab 1'),
-                    (3, 4, 3, 'Thursday', '14:00:00', '15:30:00', 'Lab 1');
-                ");
+        if (strpos($line, '=') !== false) {
+            [$key, $val] = explode('=', $line, 2);
+            $key = trim($key);
+            $val = trim($val, " \t\n\r\0\x0B\"'");
+            if (!array_key_exists($key, $_SERVER) && !array_key_exists($key, $_ENV)) {
+                putenv("$key=$val");
+                $_ENV[$key] = $val;
+                $_SERVER[$key] = $val;
             }
         }
-    } catch (Throwable $migrationError) {
-        // Silently skip if table doesn't exist yet during initial DB setup
     }
-
-}
-catch (PDOException $e){
-    die("Database connection failed: " . $e->getMessage());
 }
 
+// 2. Parse database credentials from standard URL (DATABASE_URL / MYSQL_URL) or individual variables
+$databaseUrl = getenv('DATABASE_URL') ?: (getenv('MYSQL_URL') ?: '');
+
+if (!empty($databaseUrl)) {
+    $parsedUrl = parse_url($databaseUrl);
+    $host = $parsedUrl['host'] ?? 'localhost';
+    $port = (int) ($parsedUrl['port'] ?? 3306);
+    $username = isset($parsedUrl['user']) ? urldecode($parsedUrl['user']) : 'root';
+    $password = isset($parsedUrl['pass']) ? urldecode($parsedUrl['pass']) : '';
+    $dbname = isset($parsedUrl['path']) ? ltrim($parsedUrl['path'], '/') : 'coaching_management';
+} else {
+    $host = getenv('DB_HOST') ?: 'localhost';
+    $port = (int) (getenv('DB_PORT') ?: 3306);
+    $dbname = getenv('DB_NAME') ?: 'coaching_management';
+    $username = getenv('DB_USER') ?: 'root';
+    $password = getenv('DB_PASS') !== false ? getenv('DB_PASS') : (getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : '');
+}
+
+// 3. SSL Configuration (required by cloud providers like TiDB Cloud, Aiven, Railway)
+$sslMode = getenv('DB_SSL');
+$useSsl = ($sslMode === 'true' || $sslMode === '1' || $sslMode === 'required');
+
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false,
+];
+
+if ($useSsl) {
+    $sslCa = getenv('DB_SSL_CA');
+    if (!empty($sslCa) && file_exists($sslCa)) {
+        $options[PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
+    } elseif (file_exists('/etc/ssl/certs/ca-certificates.crt')) {
+        // Standard Linux CA bundle (Debian/Ubuntu/Docker on Render)
+        $options[PDO::MYSQL_ATTR_SSL_CA] = '/etc/ssl/certs/ca-certificates.crt';
+    } else {
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+    }
+}
+
+// 4. Establish PDO connection
+try {
+    $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
+    $db = new PDO($dsn, $username, $password, $options);
+} catch (PDOException $e) {
+    error_log("Database connection failed: " . $e->getMessage());
+
+    $isLocal = in_array($host, ['localhost', '127.0.0.1'], true) || getenv('APP_ENV') === 'development';
+    if ($isLocal) {
+        die("Database connection failed: " . $e->getMessage());
+    } else {
+        die("Database service is currently unavailable. Please verify connection credentials or contact the administrator.");
+    }
+}
 ?>

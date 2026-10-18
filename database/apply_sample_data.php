@@ -1,4 +1,10 @@
 <?php
+// Remote execution guard: Only allow CLI or localhost
+if (php_sapi_name() !== 'cli' && !in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1', 'localhost'], true)) {
+    http_response_code(403);
+    die('Forbidden: Database utility scripts cannot be executed remotely.');
+}
+
 // Set headers
 header('Content-Type: text/html; charset=utf-8');
 require_once __DIR__ . '/../backend/config/database.php';
@@ -271,6 +277,11 @@ try {
     ");
     $response['inserted']['fees'] = 23;
 
+    // 7. Auto-sync active student monthly fees
+    require_once __DIR__ . '/../backend/controllers/FeeController.php';
+    $feeController = new FeeController($db);
+    $response['synced_fees_count'] = $feeController->syncActiveStudentMonthlyFees();
+
     // Fetch live row counts
     $response['counts']['users'] = (int)$db->query("SELECT COUNT(*) FROM users")->fetchColumn();
     $response['counts']['students'] = (int)$db->query("SELECT COUNT(*) FROM students")->fetchColumn();
@@ -281,7 +292,7 @@ try {
     $response['counts']['fees'] = (int)$db->query("SELECT COUNT(*) FROM fees")->fetchColumn();
 
     $response['success'] = true;
-    $response['message'] = "Database sample data synchronized successfully!";
+    $response['message'] = "Database sample data and auto-fee synchronization executed successfully!";
 } catch (Throwable $e) {
     $response['success'] = false;
     $response['message'] = "Error updating database: " . $e->getMessage();

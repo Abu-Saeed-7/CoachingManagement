@@ -55,7 +55,7 @@ $logs = $history['attendanceRecords'];
                 <li class="active"><a href="student_attendance.php">📋 <span>My Attendance</span></a></li>
                 <li><a href="student_results.php">📊 <span>My Results</span></a></li>
                 <li><a href="student_fees.php">💰 <span>My Fees</span></a></li>
-                <li class="logout"><a href="../login_page/loginPage.php">🚪 <span>Logout</span></a></li>
+                <li class="logout"><a href="../logout.php">🚪 <span>Logout</span></a></li>
             </ul>
         </aside>
 

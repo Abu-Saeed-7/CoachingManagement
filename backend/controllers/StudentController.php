@@ -136,9 +136,20 @@ class StudentController {
 
             if ($batchId > 0) {
                 $enrollmentStatement = $this->db->prepare(
-                    'INSERT INTO enrollments (student_id, batch_id, status) VALUES (?, ?, \'active\')'
+                    'INSERT INTO enrollments (student_id, batch_id, enrollment_date, status) VALUES (?, ?, CURDATE(), \'active\')'
                 );
                 $enrollmentStatement->execute([$studentId, $batchId]);
+
+                // Auto-generate initial monthly fee with status 'unpaid' for the enrollment month
+                $currentMonth = date('Y-m-01');
+                $chkFee = $this->db->prepare('SELECT id FROM fees WHERE student_id = ? AND month = ? LIMIT 1');
+                $chkFee->execute([$studentId, $currentMonth]);
+                if (!$chkFee->fetch()) {
+                    $feeStmt = $this->db->prepare(
+                        'INSERT INTO fees (student_id, amount, month, status, payment_date) VALUES (?, 3000.00, ?, \'unpaid\', NULL)'
+                    );
+                    $feeStmt->execute([$studentId, $currentMonth]);
+                }
             }
 
             $this->db->commit();

@@ -51,16 +51,31 @@ class AuthController {
                 return "This account does not have $selectedRole privileges.";
             }
 
-            $passwordValid = password_verify($password, $user['password']) || ($password === $user['password']);
+            $passwordValid = false;
+            if (password_verify($password, $user['password'])) {
+                $passwordValid = true;
+                if (password_needs_rehash($user['password'], PASSWORD_DEFAULT)) {
+                    $newHash = password_hash($password, PASSWORD_DEFAULT);
+                    $up = $this->db->prepare('UPDATE users SET password = ? WHERE id = ?');
+                    $up->execute([$newHash, $user['id']]);
+                }
+            } elseif ($password === $user['password']) {
+                // Upgrade legacy plaintext seed passwords to secure password_hash on first login
+                $newHash = password_hash($password, PASSWORD_DEFAULT);
+                $up = $this->db->prepare('UPDATE users SET password = ? WHERE id = ?');
+                $up->execute([$newHash, $user['id']]);
+                $passwordValid = true;
+            }
 
             if (!$passwordValid) {
                 return 'Incorrect password. Please try again.';
             }
 
-            // Set session variables
+            // Set session variables with session fixation protection
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
+            session_regenerate_id(true);
 
             $_SESSION['user_id'] = (int) $user['id'];
             $_SESSION['user_name'] = $user['name'];

@@ -70,12 +70,23 @@ $opsData = $reportController->getOperationsReport($filters);
                 <li><a href="fees.php">💰 <span>Fees</span></a></li>
                 <li class="active"><a href="reports.php">📑 <span>Reports</span></a></li>
                 <li><a href="admin_profile.php">⚙️ <span>Profile</span></a></li>
-                <li class="logout"><a href="../login_page/loginPage.php">🚪 <span>Logout</span></a></li>
+                <li class="logout"><a href="../logout.php">🚪 <span>Logout</span></a></li>
             </ul>
         </aside>
 
         <!-- MAIN CONTENT AREA -->
         <main class="main_content">
+
+            <!-- PRINT-ONLY OFFICIAL HEADER (hidden on screen, visible in PDF/print) -->
+            <div class="print_only_header" id="printOnlyHeader" aria-hidden="true">
+                <div class="print_brand">COACHING MANAGEMENT SYSTEM</div>
+                <h2 class="print_title" id="printReportTitle">Financial Reports</h2>
+                <div class="print_meta">
+                    <span id="printFilterLine">All Records</span>
+                    <span class="print_sep">•</span>
+                    <span>Printed on: <span id="printDateLine"></span></span>
+                </div>
+            </div>
 
             <!-- PAGE HEADER & ACTIONS -->
             <div class="report_page_header">
@@ -181,7 +192,6 @@ $opsData = $reportController->getOperationsReport($filters);
                     <?php if (!empty($filters['to_date'])): ?>
                         <span class="filter_chip">To: <strong><?= htmlspecialchars($filters['to_date']); ?></strong></span>
                     <?php endif; ?>
-                    <a href="reports.php?tab=<?= urlencode($currentTab); ?>" class="clear_filter_chip">✕ Clear Filters</a>
                 </div>
             <?php endif; ?>
 
@@ -1036,6 +1046,11 @@ $opsData = $reportController->getOperationsReport($filters);
                 </div>
             </div>
 
+            <!-- PRINT-ONLY FOOTER (hidden on screen, visible in PDF/print) -->
+            <div class="print_only_footer" aria-hidden="true">
+                System generated report — Coaching Management System • Verify data with admin office
+            </div>
+
         </main>
     </div>
 
@@ -1068,6 +1083,33 @@ $opsData = $reportController->getOperationsReport($filters);
         const tabPanes = document.querySelectorAll('.report_tab_pane');
         const activeTabInput = document.getElementById('activeTabInput');
 
+        // Sync the print/PDF header with the currently visible report part
+        function updatePrintHeader() {
+            const activeBtn = document.querySelector('.report_tab_btn.active');
+            const titleEl = document.getElementById('printReportTitle');
+            const filterEl = document.getElementById('printFilterLine');
+            const dateEl = document.getElementById('printDateLine');
+
+            const tabName = activeBtn ? activeBtn.innerText.replace(/[\n\r]+/g, ' ').trim() : 'Report';
+            if (titleEl) titleEl.textContent = tabName;
+
+            const chips = document.querySelectorAll('.active_filter_bar .filter_chip');
+            if (filterEl) {
+                if (chips.length > 0) {
+                    filterEl.textContent = Array.from(chips).map(c => c.innerText.trim()).join(' | ');
+                } else {
+                    filterEl.textContent = 'All Records (No filter applied)';
+                }
+            }
+
+            if (dateEl) dateEl.textContent = new Date().toLocaleString();
+
+            // Helpful PDF filename: Coaching_Reports-Financial_Reports.pdf etc.
+            try {
+                document.title = 'Coaching_Reports-' + tabName.replace(/[^a-zA-Z0-9]+/g, '_');
+            } catch (e) { /* ignore */ }
+        }
+
         tabButtons.forEach(btn => {
             btn.addEventListener('click', function () {
                 tabButtons.forEach(b => b.classList.remove('active'));
@@ -1092,8 +1134,11 @@ $opsData = $reportController->getOperationsReport($filters);
                 window.history.replaceState({}, '', url);
 
                 // Render charts on tab switch if needed
+                if (targetId === 'tab-financial') renderRevenueChart();
                 if (targetId === 'tab-attendance') renderAttendanceChart();
                 if (targetId === 'tab-exams') renderGradeChart();
+
+                updatePrintHeader();
             });
         });
 
@@ -1152,50 +1197,105 @@ $opsData = $reportController->getOperationsReport($filters);
             });
         });
 
-        // 4. One-Click Export to Excel (CSV) for the visible active table
+        // 4. One-Click Export to Excel (CSV) — exports ALL tables + KPIs of the active tab
         document.getElementById('exportCsvBtn').addEventListener('click', function () {
             const activePane = document.querySelector('.report_tab_pane.active');
             if (!activePane) return;
 
-            const table = activePane.querySelector('table.report_table');
-            if (!table) {
+            const tables = activePane.querySelectorAll('table.report_table');
+            if (!tables || tables.length === 0) {
                 alert('No table data available to export in this tab.');
                 return;
             }
 
-            let csvContent = '\uFEFF'; // UTF-8 BOM
-            const rows = table.querySelectorAll('tr');
+            const csvEscape = (text) => '"' + String(text ?? '').replace(/"/g, '""').trim() + '"';
 
-            rows.forEach(row => {
-                // Skip hidden rows from search filter
-                if (row.style.display === 'none') return;
+            let csvContent = '\uFEFF'; // UTF-8 BOM for Excel Bangla/৳ support
+            const activeTabName = document.querySelector('.report_tab_btn.active')
+                ? document.querySelector('.report_tab_btn.active').innerText.trim()
+                : 'Report';
 
-                const cols = row.querySelectorAll('th, td');
-                const rowData = [];
+            // Report title + date
+            csvContent += csvEscape(activeTabName) + '\r\n';
+            csvContent += csvEscape('Exported on: ' + new Date().toLocaleString()) + '\r\n';
 
-                cols.forEach(col => {
-                    // Skip action column
-                    if (col.classList.contains('action_col')) return;
+            // Active filters (if shown)
+            const filterChips = document.querySelectorAll('.active_filter_bar .filter_chip');
+            if (filterChips.length > 0) {
+                const chipTexts = Array.from(filterChips).map(c => c.innerText.trim());
+                csvContent += csvEscape('Filters: ' + chipTexts.join(' | ')) + '\r\n';
+            }
+            csvContent += '\r\n';
 
-                    let text = col.innerText.replace(/"/g, '""').trim();
-                    rowData.push('"' + text + '"');
+            // KPI summary of active tab
+            const kpiCards = activePane.querySelectorAll('.kpi_card');
+            if (kpiCards.length > 0) {
+                csvContent += csvEscape('Summary') + '\r\n';
+                kpiCards.forEach(card => {
+                    const label = card.querySelector('.kpi_label') ? card.querySelector('.kpi_label').innerText.trim() : '';
+                    const val = card.querySelector('.kpi_val') ? card.querySelector('.kpi_val').innerText.trim() : '';
+                    const sub = card.querySelector('.kpi_sub') ? card.querySelector('.kpi_sub').innerText.trim() : '';
+                    if (label || val) {
+                        csvContent += [csvEscape(label), csvEscape(val), csvEscape(sub)].join(',') + '\r\n';
+                    }
+                });
+                csvContent += '\r\n';
+            }
+
+            // Every table in the active tab as its own section
+            tables.forEach((table, idx) => {
+                let sectionTitle = 'Table ' + (idx + 1);
+                const section = table.closest('.report_section, .analytics_box');
+                if (section) {
+                    const heading = section.querySelector('h3');
+                    if (heading) sectionTitle = heading.innerText.trim().replace(/\s+/g, ' ');
+                } else if (table.id) {
+                    sectionTitle = table.id;
+                }
+
+                csvContent += csvEscape(sectionTitle) + '\r\n';
+
+                const rows = table.querySelectorAll('tr');
+                let exportedRows = 0;
+
+                rows.forEach(row => {
+                    // Skip hidden rows from live search filter
+                    if (row.style.display === 'none') return;
+                    // Skip "no data" placeholder rows — handled below
+                    if (row.querySelector('.empty_state_row')) return;
+
+                    const cols = row.querySelectorAll('th, td');
+                    const rowData = [];
+
+                    cols.forEach(col => {
+                        // Skip call/action column (phone buttons)
+                        if (col.classList.contains('action_col')) return;
+                        rowData.push(csvEscape(col.innerText));
+                    });
+
+                    if (rowData.length > 0) {
+                        csvContent += rowData.join(',') + '\r\n';
+                        exportedRows++;
+                    }
                 });
 
-                if (rowData.length > 0) {
-                    csvContent += rowData.join(',') + '\r\n';
+                if (exportedRows === 0) {
+                    csvContent += csvEscape('No data available for this filter.') + '\r\n';
                 }
+                csvContent += '\r\n';
             });
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            const activeTabName = document.querySelector('.report_tab_btn.active').innerText.trim();
             const filename = 'Coaching_Report_' + activeTabName.replace(/[^a-zA-Z0-9]/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.csv';
 
-            link.href = URL.createObjectURL(blob);
+            link.href = url;
             link.setAttribute('download', filename);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
         });
 
         // 5. SELF-CONTAINED INTERACTIVE CANVAS CHARTS WITH PRECISION MOUSE HOVER
@@ -1819,16 +1919,29 @@ $opsData = $reportController->getOperationsReport($filters);
         }
 
         // Initialize on load & handle resize
+        function renderActiveTabCharts() {
+            const activePane = document.querySelector('.report_tab_pane.active');
+            if (!activePane) return;
+            if (activePane.id === 'tab-financial') renderRevenueChart();
+            if (activePane.id === 'tab-attendance') renderAttendanceChart();
+            if (activePane.id === 'tab-exams') renderGradeChart();
+        }
+
         function initAllReportCharts() {
-            renderRevenueChart();
-            if ('<?= $currentTab; ?>' === 'attendance') renderAttendanceChart();
-            if ('<?= $currentTab; ?>' === 'exams') renderGradeChart();
+            renderActiveTabCharts();
+            if (typeof updatePrintHeader === 'function') updatePrintHeader();
         }
 
         window.addEventListener('DOMContentLoaded', initAllReportCharts);
         window.addEventListener('load', initAllReportCharts);
         setTimeout(initAllReportCharts, 80);
         setTimeout(initAllReportCharts, 250);
+
+        // Re-render active chart + refresh header before printing so canvas is not blank
+        window.addEventListener('beforeprint', () => {
+            renderActiveTabCharts();
+            if (typeof updatePrintHeader === 'function') updatePrintHeader();
+        });
 
         let resizeTimer;
         window.addEventListener('resize', () => {

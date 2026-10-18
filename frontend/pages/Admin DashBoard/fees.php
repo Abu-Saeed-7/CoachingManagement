@@ -60,7 +60,7 @@ $fees = $feeController->getAllFees();
                 <li class="active"><a href="fees.php">💰 <span>Fees</span></a></li>
                 <li><a href="reports.php">📑 <span>Reports</span></a></li>
                 <li><a href="admin_profile.php">⚙️ <span>Profile</span></a></li>
-                <li class="logout"><a href="../login_page/loginPage.php">🚪 <span>Logout</span></a></li>
+                <li class="logout"><a href="../logout.php">🚪 <span>Logout</span></a></li>
             </ul>
         </aside>
 

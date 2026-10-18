@@ -60,7 +60,7 @@ $studentsToAttend = $attData['studentsToAttend'];
                 <li class="active"><a href="teacher_attendance.php">📋 <span>Attendance</span></a></li>
                 <li><a href="teacher_results.php">📊 <span>Enter Results</span></a></li>
                 <li><a href="teacher_profile.php">👤 <span>My Profile</span></a></li>
-                <li class="logout"><a href="../login_page/loginPage.php">🚪 <span>Logout</span></a></li>
+                <li class="logout"><a href="../logout.php">🚪 <span>Logout</span></a></li>
             </ul>
         </aside>
 
