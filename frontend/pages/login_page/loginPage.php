@@ -30,6 +30,13 @@ $error = $authController->handleLogin();
 </head>
 
 <body>
+    <!-- BACK TO HOME LINK -->
+    <div style="position: absolute; top: 20px; left: 24px;">
+        <a href="../../../index.php" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #6b7280; text-decoration: none; padding: 6px 12px; border-radius: 6px; background: #ffffff; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
+            <span style="font-size: 14px;">←</span> Back to Website
+        </a>
+    </div>
+
     <!-- HEADER -->
     <header class="all_header">
         <div class="cap">
@@ -49,14 +56,15 @@ $error = $authController->handleLogin();
             </div>
         <?php endif; ?>
 
+        <?php $currentRole = strtolower($_POST['role'] ?? ($_GET['role'] ?? 'admin')); ?>
         <form id="loginForm" method="post">
             <!-- SELECT ROLE OPTION -->
             <div class="role_div">
                 <label for="user_role">Select Role</label>
                 <select id="user_role" name="role" required>
-                    <option value="admin" <?= (($_POST['role'] ?? '') === 'admin') ? 'selected' : ''; ?>>Admin</option>
-                    <option value="teacher" <?= (($_POST['role'] ?? '') === 'teacher') ? 'selected' : ''; ?>>Teacher</option>
-                    <option value="student" <?= (($_POST['role'] ?? '') === 'student') ? 'selected' : ''; ?>>Student</option>
+                    <option value="admin" <?= ($currentRole === 'admin') ? 'selected' : ''; ?>>Admin</option>
+                    <option value="teacher" <?= ($currentRole === 'teacher') ? 'selected' : ''; ?>>Teacher</option>
+                    <option value="student" <?= ($currentRole === 'student') ? 'selected' : ''; ?>>Student</option>
                 </select>
             </div>
 
