@@ -5,9 +5,39 @@ require_once __DIR__ . '/../../../backend/controllers/FeeController.php';
 checkAuth(['admin']);
 
 $feeController = new FeeController();
-$postResult = $feeController->handleAddFee();
-$message = $postResult['message'];
-$messageType = $postResult['messageType'];
+$addResult = $feeController->handleAddFee();
+$editResult = $feeController->handleEditFee();
+$deleteResult = $feeController->handleDeleteFee();
+
+$message = '';
+$messageType = 'success';
+$modalErrors = [];
+$modalMode = 'add';
+
+if ($addResult['message'] !== '') {
+    if ($addResult['messageType'] === 'error') {
+        $modalErrors = !empty($addResult['errors']) ? $addResult['errors'] : [$addResult['message']];
+        $modalMode = 'add';
+    } else {
+        $message = $addResult['message'];
+        $messageType = $addResult['messageType'];
+    }
+}
+
+if ($editResult['message'] !== '') {
+    if ($editResult['messageType'] === 'error') {
+        $modalErrors = !empty($editResult['errors']) ? $editResult['errors'] : [$editResult['message']];
+        $modalMode = 'edit';
+    } else {
+        $message = $editResult['message'];
+        $messageType = $editResult['messageType'];
+    }
+}
+
+if ($deleteResult['message'] !== '') {
+    $message = $deleteResult['message'];
+    $messageType = $deleteResult['messageType'];
+}
 
 $stats = $feeController->getFeeStats();
 $totalCollected = $stats['totalCollected'];
@@ -103,7 +133,7 @@ $fees = $feeController->getAllFees();
             </div>
 
             <?php if ($message !== ''): ?>
-                <p class="form_message <?= $messageType; ?>"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></p>
+                <div class="form_message <?= $messageType; ?>"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></div>
             <?php endif; ?>
 
             <!-- ফিস টেবিল -->
@@ -128,7 +158,7 @@ $fees = $feeController->getAllFees();
                             </tr>
                         <?php else: ?>
                             <?php foreach ($fees as $fee): ?>
-                                <tr>
+                                <tr data-status="<?= htmlspecialchars(strtolower($fee['status']), ENT_QUOTES, 'UTF-8'); ?>">
                                     <td>#INV-<?= str_pad((string)$fee['id'], 4, '0', STR_PAD_LEFT); ?></td>
                                     <td><strong><?= htmlspecialchars($fee['student_name'], ENT_QUOTES, 'UTF-8'); ?></strong> (Roll: <?= htmlspecialchars($fee['roll'], ENT_QUOTES, 'UTF-8'); ?>)</td>
                                     <td><span class="badge"><?= htmlspecialchars($fee['batch_name'], ENT_QUOTES, 'UTF-8'); ?></span></td>
@@ -141,8 +171,22 @@ $fees = $feeController->getAllFees();
                                         </span>
                                     </td>
                                     <td>
-                                        <button class="btn_icon edit_btn" title="Edit" type="button">✏️</button>
-                                        <button class="btn_icon delete_btn" title="Delete" type="button">🗑️</button>
+                                        <button
+                                            class="btn_icon edit_btn"
+                                            title="Edit"
+                                            type="button"
+                                            data-fee-id="<?= (int) $fee['id']; ?>"
+                                            data-student-id="<?= (int) $fee['student_id']; ?>"
+                                            data-month="<?= htmlspecialchars(date('Y-m', strtotime($fee['month'])), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-amount="<?= htmlspecialchars((string) $fee['amount'], ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-status="<?= htmlspecialchars($fee['status'], ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-payment-date="<?= htmlspecialchars($fee['payment_date'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                        >✏️</button>
+                                        <form method="post" style="display:inline;" onsubmit="return confirm('Delete fee invoice #INV-<?= str_pad((string)$fee['id'], 4, '0', STR_PAD_LEFT); ?> for <?= htmlspecialchars(addslashes($fee['student_name']), ENT_QUOTES, 'UTF-8'); ?>?');">
+                                            <input type="hidden" name="action" value="delete_fee">
+                                            <input type="hidden" name="fee_id" value="<?= (int) $fee['id']; ?>">
+                                            <button class="btn_icon delete_btn" title="Delete" type="submit">🗑️</button>
+                                        </form>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -153,17 +197,26 @@ $fees = $feeController->getAllFees();
         </main>
     </div>
 
-    <!-- ৩. COLLECT / ADD FEE MODAL (পপ-আপ ফর্ম) -->
+    <!-- ৩. COLLECT / ADD / EDIT FEE MODAL (পপ-আপ ফর্ম) -->
     <div class="modal_overlay" id="feeModal">
         <div class="modal_box">
             <div class="modal_header">
-                <h3>Collect / Record Student Fee</h3>
-                <button class="close_modal" id="closeModal">&times;</button>
+                <h3 id="feeModalTitle"><?= $modalMode === 'edit' ? 'Edit Fee Record' : 'Collect / Record Student Fee'; ?></h3>
+                <button type="button" class="close_modal" id="closeModal">&times;</button>
             </div>
-            <form class="modal_form" method="post">
+            <?php if (!empty($modalErrors)): ?>
+                <div class="form_message error">
+                    <?php foreach ($modalErrors as $err): ?>
+                        <div style="margin-bottom: 4px;">⚠️ <?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8'); ?></div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+            <form class="modal_form" method="post" id="feeModalForm">
+                <input type="hidden" name="action" id="feeFormAction" value="<?= $modalMode === 'edit' ? 'edit_fee' : 'add_fee'; ?>">
+                <input type="hidden" name="fee_id" id="feeIdInput" value="<?= (int) ($_POST['fee_id'] ?? 0); ?>">
                 <div class="form_group">
                     <label>Select Student</label>
-                    <select name="student_id" required>
+                    <select name="student_id" id="feeStudentId" required>
                         <option value="">Select Student</option>
                         <?php foreach ($students as $student): ?>
                             <option value="<?= (int) $student['id']; ?>" <?= ((int)($_POST['student_id'] ?? 0) === (int)$student['id']) ? 'selected' : ''; ?>>
@@ -175,17 +228,17 @@ $fees = $feeController->getAllFees();
                 <div class="form_row">
                     <div class="form_group">
                         <label>Fee Month</label>
-                        <input type="month" name="month" value="<?= htmlspecialchars($_POST['month'] ?? date('Y-m'), ENT_QUOTES, 'UTF-8'); ?>" required>
+                        <input type="month" name="month" id="feeMonth" value="<?= htmlspecialchars($_POST['month'] ?? date('Y-m'), ENT_QUOTES, 'UTF-8'); ?>" required>
                     </div>
                     <div class="form_group">
                         <label>Fee Amount (BDT)</label>
-                        <input type="number" name="amount" value="<?= htmlspecialchars($_POST['amount'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. 3000" min="1" max="500000" step="any" required>
+                        <input type="number" name="amount" id="feeAmount" value="<?= htmlspecialchars($_POST['amount'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. 3000" min="1" max="500000" step="any" required>
                     </div>
                 </div>
                 <div class="form_row">
                     <div class="form_group">
                         <label>Payment Status</label>
-                        <select name="status" required>
+                        <select name="status" id="feeStatus" required>
                             <option value="paid" <?= (($_POST['status'] ?? 'paid') === 'paid') ? 'selected' : ''; ?>>Paid</option>
                             <option value="unpaid" <?= (($_POST['status'] ?? '') === 'unpaid') ? 'selected' : ''; ?>>Unpaid / Due</option>
                             <option value="partial" <?= (($_POST['status'] ?? '') === 'partial') ? 'selected' : ''; ?>>Partial</option>
@@ -193,12 +246,12 @@ $fees = $feeController->getAllFees();
                     </div>
                     <div class="form_group">
                         <label>Payment Date</label>
-                        <input type="date" name="payment_date" value="<?= htmlspecialchars($_POST['payment_date'] ?? date('Y-m-d'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="date" name="payment_date" id="feePaymentDate" value="<?= htmlspecialchars($_POST['payment_date'] ?? date('Y-m-d'), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                 </div>
                 <div class="modal_buttons">
                     <button type="button" class="btn_cancel" id="cancelModal">Cancel</button>
-                    <button type="submit" class="action_btn">Save Receipt</button>
+                    <button type="submit" class="action_btn" id="feeSubmitBtn"><?= $modalMode === 'edit' ? 'Update Receipt' : 'Save Receipt'; ?></button>
                 </div>
             </form>
         </div>
@@ -225,20 +278,56 @@ $fees = $feeController->getAllFees();
             }
         });
 
-        // Modal Open / Close
+        // Modal Open / Close (Add & Edit Modes)
         const openAddModal = document.getElementById('openAddModal');
         const closeModal = document.getElementById('closeModal');
         const cancelModal = document.getElementById('cancelModal');
         const feeModal = document.getElementById('feeModal');
+        const feeModalTitle = document.getElementById('feeModalTitle');
+        const feeFormAction = document.getElementById('feeFormAction');
+        const feeIdInput = document.getElementById('feeIdInput');
+        const feeStudentId = document.getElementById('feeStudentId');
+        const feeMonth = document.getElementById('feeMonth');
+        const feeAmount = document.getElementById('feeAmount');
+        const feeStatus = document.getElementById('feeStatus');
+        const feePaymentDate = document.getElementById('feePaymentDate');
+        const feeSubmitBtn = document.getElementById('feeSubmitBtn');
 
-        openAddModal.addEventListener('click', () => feeModal.classList.add('show'));
+        openAddModal.addEventListener('click', () => {
+            feeFormAction.value = 'add_fee';
+            feeIdInput.value = '0';
+            feeModalTitle.textContent = 'Collect / Record Student Fee';
+            feeSubmitBtn.textContent = 'Save Receipt';
+            feeStudentId.value = '';
+            feeMonth.value = '<?= date('Y-m'); ?>';
+            feeAmount.value = '';
+            feeStatus.value = 'paid';
+            feePaymentDate.value = '<?= date('Y-m-d'); ?>';
+            feeModal.classList.add('show');
+        });
+
+        document.querySelectorAll('.edit_btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                feeFormAction.value = 'edit_fee';
+                feeIdInput.value = btn.dataset.feeId || '0';
+                feeModalTitle.textContent = 'Edit Fee Record';
+                feeSubmitBtn.textContent = 'Update Receipt';
+                feeStudentId.value = btn.dataset.studentId || '';
+                feeMonth.value = btn.dataset.month || '';
+                feeAmount.value = btn.dataset.amount || '';
+                feeStatus.value = btn.dataset.status || 'unpaid';
+                feePaymentDate.value = btn.dataset.paymentDate || '';
+                feeModal.classList.add('show');
+            });
+        });
+
         closeModal.addEventListener('click', () => feeModal.classList.remove('show'));
         cancelModal.addEventListener('click', () => feeModal.classList.remove('show'));
         feeModal.addEventListener('click', (e) => {
             if (e.target === feeModal) feeModal.classList.remove('show');
         });
 
-        <?php if ($messageType === 'error'): ?>
+        <?php if (!empty($modalErrors)): ?>
         feeModal.classList.add('show');
         <?php endif; ?>
 
@@ -253,8 +342,9 @@ $fees = $feeController->getAllFees();
 
             rows.forEach(row => {
                 const text = row.textContent.toLowerCase();
+                const rowStatus = (row.dataset.status || '').toLowerCase();
                 const matchesSearch = text.includes(term);
-                const matchesStatus = !status || text.includes(status);
+                const matchesStatus = !status || rowStatus === status;
                 row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
             });
         }

@@ -6,8 +6,25 @@ checkAuth(['admin']);
 
 $teacherController = new TeacherController();
 $postResult = $teacherController->handleAddTeacher();
-$message = $postResult['message'];
-$messageType = $postResult['messageType'];
+$deleteResult = $teacherController->handleDeleteTeacher();
+
+$message = '';
+$messageType = 'success';
+$modalErrors = [];
+
+if ($postResult['message'] !== '') {
+    if ($postResult['messageType'] === 'error') {
+        $modalErrors = !empty($postResult['errors']) ? $postResult['errors'] : [$postResult['message']];
+    } else {
+        $message = $postResult['message'];
+        $messageType = $postResult['messageType'];
+    }
+}
+
+if ($deleteResult['message'] !== '') {
+    $message = $deleteResult['message'];
+    $messageType = $deleteResult['messageType'];
+}
 
 $teachers = $teacherController->getAllTeachers();
 ?>
@@ -75,13 +92,7 @@ $teachers = $teacherController->getAllTeachers();
             </div>
 
             <!-- টিচার টেবিল -->
-            <?php if (!empty($errors)): ?>
-                <div class="form_message error" style="background:#fee2e2; border-left:4px solid #ef4444; color:#b91c1c; padding:12px 16px; border-radius:6px; margin-bottom:16px;">
-                    <?php foreach ($errors as $err): ?>
-                        <div style="margin-bottom: 4px;">⚠️ <?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8'); ?></div>
-                    <?php endforeach; ?>
-                </div>
-            <?php elseif ($message !== ''): ?>
+            <?php if ($message !== ''): ?>
                 <div class="form_message <?= $messageType; ?>"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></div>
             <?php endif; ?>
 
@@ -114,7 +125,11 @@ $teachers = $teacherController->getAllTeachers();
                                     <td><span class="badge"><?= htmlspecialchars($teacher['assigned_batches'], ENT_QUOTES, 'UTF-8'); ?></span></td>
                                     <td>
                                         <button class="btn_icon edit_btn" title="Edit" type="button">✏️</button>
-                                        <button class="btn_icon delete_btn" title="Delete" type="button">🗑️</button>
+                                        <form method="post" style="display:inline;" onsubmit="return confirm('Delete teacher <?= htmlspecialchars(addslashes($teacher['name']), ENT_QUOTES, 'UTF-8'); ?>? This will permanently remove their login, batch assignments, and schedules.');">
+                                            <input type="hidden" name="action" value="delete_teacher">
+                                            <input type="hidden" name="teacher_id" value="<?= (int) $teacher['id']; ?>">
+                                            <button class="btn_icon delete_btn" title="Delete" type="submit">🗑️</button>
+                                        </form>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -130,9 +145,17 @@ $teachers = $teacherController->getAllTeachers();
         <div class="modal_box">
             <div class="modal_header">
                 <h3>Add New Teacher</h3>
-                <button class="close_modal" id="closeModal">&times;</button>
+                <button type="button" class="close_modal" id="closeModal">&times;</button>
             </div>
+            <?php if (!empty($modalErrors)): ?>
+                <div class="form_message error">
+                    <?php foreach ($modalErrors as $err): ?>
+                        <div style="margin-bottom: 4px;">⚠️ <?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8'); ?></div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
             <form class="modal_form" method="post">
+                <input type="hidden" name="action" value="add_teacher">
                 <div class="form_row">
                     <div class="form_group">
                         <label>Full Name</label>
@@ -224,7 +247,7 @@ $teachers = $teacherController->getAllTeachers();
             if (e.target === teacherModal) teacherModal.classList.remove('show');
         });
 
-        <?php if ($messageType === 'error'): ?>
+        <?php if (!empty($modalErrors)): ?>
         teacherModal.classList.add('show');
         <?php endif; ?>
 

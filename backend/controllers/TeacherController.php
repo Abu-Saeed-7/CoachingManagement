@@ -5,8 +5,12 @@ class TeacherController {
     private PDO $db;
 
     public function __construct(?PDO $db = null) {
-        global $db;
-        $this->db = $db ?? $GLOBALS['db'];
+        if ($db !== null) {
+            $this->db = $db;
+        } else {
+            global $db;
+            $this->db = $db ?? $GLOBALS['db'];
+        }
     }
 
     /**
@@ -31,9 +35,9 @@ class TeacherController {
      * Process add teacher form submission with validation.
      */
     public function handleAddTeacher(): array {
-        $result = ['message' => '', 'messageType' => 'success'];
+        $result = ['message' => '', 'messageType' => 'success', 'errors' => []];
 
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || (isset($_POST['action']) && $_POST['action'] !== 'add_teacher')) {
             return $result;
         }
 
@@ -50,8 +54,8 @@ class TeacherController {
         // Field-level validation
         if ($name === '' || strlen($name) < 2 || strlen($name) > 100) {
             $errors[] = 'Teacher Name must be between 2 and 100 characters.';
-        } elseif (!preg_match("/^[a-zA-Z\s\.\'-]+$/u", $name)) {
-            $errors[] = 'Teacher Name can only contain letters, spaces, dots, hyphens, and apostrophes.';
+        } elseif (!preg_match("/^[a-zA-Z0-9\s\.\'-]+$/u", $name)) {
+            $errors[] = 'Teacher Name can only contain letters, numbers, spaces, dots, hyphens, and apostrophes.';
         }
 
         if ($subjectSpecialist !== '' && (strlen($subjectSpecialist) < 2 || strlen($subjectSpecialist) > 100)) {
@@ -89,7 +93,8 @@ class TeacherController {
         }
 
         if (!empty($errors)) {
-            $result['message'] = implode('<br>', $errors);
+            $result['errors'] = $errors;
+            $result['message'] = implode(' ', $errors);
             $result['messageType'] = 'error';
             return $result;
         }
@@ -116,9 +121,67 @@ class TeacherController {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
-            $result['message'] = (isset($error->errorInfo[1]) && $error->errorInfo[1] === 1062) 
-                ? 'This email is already registered.' 
+            $errMsg = (isset($error->errorInfo[1]) && (int) $error->errorInfo[1] === 1062)
+                ? 'This email is already registered.'
                 : 'Unable to add teacher: ' . $error->getMessage();
+            $result['message'] = $errMsg;
+            $result['errors'] = [$errMsg];
+            $result['messageType'] = 'error';
+        }
+
+        return $result;
+    }
+
+    /**
+     * Delete a teacher and dependent assignments atomically inside a transaction.
+     */
+    public function handleDeleteTeacher(): array {
+        $result = ['message' => '', 'messageType' => 'success'];
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || ($_POST['action'] ?? '') !== 'delete_teacher') {
+            return $result;
+        }
+
+        $teacherId = (int) ($_POST['teacher_id'] ?? 0);
+        if ($teacherId <= 0) {
+            $result['message'] = 'Invalid teacher ID.';
+            $result['messageType'] = 'error';
+            return $result;
+        }
+
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT teachers.user_id, users.name
+                 FROM teachers
+                 INNER JOIN users ON users.id = teachers.user_id
+                 WHERE teachers.id = ? AND users.role = \'teacher\'
+                 LIMIT 1'
+            );
+            $stmt->execute([$teacherId]);
+            $teacher = $stmt->fetch();
+
+            if (!$teacher) {
+                $result['message'] = 'Teacher record not found.';
+                $result['messageType'] = 'error';
+                return $result;
+            }
+
+            $this->db->beginTransaction();
+
+            // Clean up dependent child rows respecting FK order
+            $this->db->prepare('DELETE FROM class_schedules WHERE teacher_id = ?')->execute([$teacherId]);
+            $this->db->prepare('DELETE FROM batch_teachers WHERE teacher_id = ?')->execute([$teacherId]);
+            $this->db->prepare('DELETE FROM teachers WHERE id = ?')->execute([$teacherId]);
+            $this->db->prepare('DELETE FROM users WHERE id = ?')->execute([(int) $teacher['user_id']]);
+
+            $this->db->commit();
+            $result['message'] = 'Teacher "' . $teacher['name'] . '" deleted successfully.';
+            $result['messageType'] = 'success';
+        } catch (PDOException $error) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            $result['message'] = 'Unable to delete teacher: ' . $error->getMessage();
             $result['messageType'] = 'error';
         }
 

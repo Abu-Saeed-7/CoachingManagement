@@ -5,8 +5,12 @@ class StudentController {
     private PDO $db;
 
     public function __construct(?PDO $db = null) {
-        global $db;
-        $this->db = $db ?? $GLOBALS['db'];
+        if ($db !== null) {
+            $this->db = $db;
+        } else {
+            global $db;
+            $this->db = $db ?? $GLOBALS['db'];
+        }
     }
 
     /**
@@ -41,9 +45,9 @@ class StudentController {
      * Process add student form submission with full validation and transaction.
      */
     public function handleAddStudent(): array {
-        $result = ['message' => '', 'messageType' => 'success'];
+        $result = ['message' => '', 'messageType' => 'success', 'errors' => []];
 
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || (isset($_POST['action']) && $_POST['action'] !== 'add_student')) {
             return $result;
         }
 
@@ -61,8 +65,8 @@ class StudentController {
         // Validation
         if ($name === '' || strlen($name) < 2 || strlen($name) > 100) {
             $errors[] = 'Full Name must be between 2 and 100 characters.';
-        } elseif (!preg_match("/^[a-zA-Z\s\.\'-]+$/u", $name)) {
-            $errors[] = 'Full Name can only contain letters, spaces, dots, hyphens, and apostrophes.';
+        } elseif (!preg_match("/^[a-zA-Z0-9\s\.\'-]+$/u", $name)) {
+            $errors[] = 'Full Name can only contain letters, numbers, spaces, dots, hyphens, and apostrophes.';
         }
 
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 150) {
@@ -114,7 +118,8 @@ class StudentController {
         }
 
         if (!empty($errors)) {
-            $result['message'] = implode('<br>', $errors);
+            $result['errors'] = $errors;
+            $result['message'] = implode(' ', $errors);
             $result['messageType'] = 'error';
             return $result;
         }
@@ -160,9 +165,69 @@ class StudentController {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
-            $result['message'] = (isset($error->errorInfo[1]) && $error->errorInfo[1] === 1062) 
-                ? 'A student with this email or roll already exists.' 
+            $errMsg = (isset($error->errorInfo[1]) && (int) $error->errorInfo[1] === 1062)
+                ? 'A student with this email or roll already exists.'
                 : 'Unable to add student: ' . $error->getMessage();
+            $result['message'] = $errMsg;
+            $result['errors'] = [$errMsg];
+            $result['messageType'] = 'error';
+        }
+
+        return $result;
+    }
+
+    /**
+     * Delete a student and dependent records atomically inside a transaction.
+     */
+    public function handleDeleteStudent(): array {
+        $result = ['message' => '', 'messageType' => 'success'];
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || ($_POST['action'] ?? '') !== 'delete_student') {
+            return $result;
+        }
+
+        $studentId = (int) ($_POST['student_id'] ?? 0);
+        if ($studentId <= 0) {
+            $result['message'] = 'Invalid student ID.';
+            $result['messageType'] = 'error';
+            return $result;
+        }
+
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT students.user_id, users.name
+                 FROM students
+                 INNER JOIN users ON users.id = students.user_id
+                 WHERE students.id = ? AND users.role = \'student\'
+                 LIMIT 1'
+            );
+            $stmt->execute([$studentId]);
+            $student = $stmt->fetch();
+
+            if (!$student) {
+                $result['message'] = 'Student record not found.';
+                $result['messageType'] = 'error';
+                return $result;
+            }
+
+            $this->db->beginTransaction();
+
+            // Clean up dependent child rows respecting FK order
+            $this->db->prepare('DELETE FROM fees WHERE student_id = ?')->execute([$studentId]);
+            $this->db->prepare('DELETE FROM results WHERE student_id = ?')->execute([$studentId]);
+            $this->db->prepare('DELETE FROM attendance WHERE student_id = ?')->execute([$studentId]);
+            $this->db->prepare('DELETE FROM enrollments WHERE student_id = ?')->execute([$studentId]);
+            $this->db->prepare('DELETE FROM students WHERE id = ?')->execute([$studentId]);
+            $this->db->prepare('DELETE FROM users WHERE id = ?')->execute([(int) $student['user_id']]);
+
+            $this->db->commit();
+            $result['message'] = 'Student "' . $student['name'] . '" deleted successfully.';
+            $result['messageType'] = 'success';
+        } catch (PDOException $error) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            $result['message'] = 'Unable to delete student: ' . $error->getMessage();
             $result['messageType'] = 'error';
         }
 

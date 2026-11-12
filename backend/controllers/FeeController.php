@@ -5,8 +5,12 @@ class FeeController {
     private PDO $db;
 
     public function __construct(?PDO $db = null) {
-        global $db;
-        $this->db = $db ?? $GLOBALS['db'];
+        if ($db !== null) {
+            $this->db = $db;
+        } else {
+            global $db;
+            $this->db = $db ?? $GLOBALS['db'];
+        }
     }
 
     /**
@@ -35,6 +39,12 @@ class FeeController {
 
             while ($cursor <= $end) {
                 $monthDate = date('Y-m-01', $cursor);
+                $deletedKey = $studentId . '|' . $monthDate;
+
+                if (!empty($_SESSION['deleted_fee_months'][$deletedKey])) {
+                    $cursor = strtotime("+1 month", $cursor);
+                    continue;
+                }
 
                 $check = $this->db->prepare("SELECT id FROM fees WHERE student_id = ? AND month = ? LIMIT 1");
                 $check->execute([$studentId, $monthDate]);
@@ -81,7 +91,7 @@ class FeeController {
         $this->syncActiveStudentMonthlyFees();
 
         return $this->db->query(
-            'SELECT fees.id, users.name AS student_name, students.roll,
+            'SELECT fees.id, fees.student_id, users.name AS student_name, students.roll,
                 COALESCE((
                     SELECT batches.name
                     FROM enrollments
@@ -97,18 +107,15 @@ class FeeController {
         )->fetchAll();
     }
 
-    public function handleAddFee(): array {
-        $result = ['message' => '', 'messageType' => 'success'];
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            return $result;
-        }
-
-        $studentId = (int) ($_POST['student_id'] ?? 0);
-        $amount = isset($_POST['amount']) ? (float) $_POST['amount'] : 0;
-        $month = trim($_POST['month'] ?? '');
-        $status = $_POST['status'] ?? 'unpaid';
-        $paymentDateInput = trim($_POST['payment_date'] ?? '');
+    /**
+     * Validate and normalize fee input shared by Add and Edit handlers.
+     */
+    private function validateFeePayload(array $input, ?int $excludeFeeId = null): array {
+        $studentId = (int) ($input['student_id'] ?? 0);
+        $amount = isset($input['amount']) ? (float) $input['amount'] : 0;
+        $month = trim($input['month'] ?? '');
+        $status = $input['status'] ?? 'unpaid';
+        $paymentDateInput = trim($input['payment_date'] ?? '');
         $errors = [];
 
         if ($studentId < 1) {
@@ -146,31 +153,190 @@ class FeeController {
             }
         }
 
+        $formattedMonth = $month !== '' ? ($month . '-01') : '';
+        $existingCollectibleId = null;
         if (empty($errors)) {
-            $formattedMonth = $month . '-01';
-            $chkDup = $this->db->prepare('SELECT id FROM fees WHERE student_id = ? AND month = ? LIMIT 1');
-            $chkDup->execute([$studentId, $formattedMonth]);
-            if ($chkDup->fetch()) {
-                $errors[] = 'A fee invoice for this student already exists for ' . date('F Y', strtotime($formattedMonth)) . '.';
+            if ($excludeFeeId !== null) {
+                $chkDup = $this->db->prepare('SELECT id, status FROM fees WHERE student_id = ? AND month = ? AND id <> ? LIMIT 1');
+                $chkDup->execute([$studentId, $formattedMonth, $excludeFeeId]);
+                $existingFee = $chkDup->fetch();
+                if ($existingFee) {
+                    $errors[] = 'A fee invoice for this student already exists for ' . date('F Y', strtotime($formattedMonth)) . '.';
+                }
+            } else {
+                $chkDup = $this->db->prepare('SELECT id, status FROM fees WHERE student_id = ? AND month = ? LIMIT 1');
+                $chkDup->execute([$studentId, $formattedMonth]);
+                $existingFee = $chkDup->fetch();
+                if ($existingFee) {
+                    if ($existingFee['status'] !== 'paid' && in_array($status, ['paid', 'partial'], true)) {
+                        $existingCollectibleId = (int) $existingFee['id'];
+                    } else {
+                        $errors[] = 'A ' . $existingFee['status'] . ' fee invoice for this student already exists for ' . date('F Y', strtotime($formattedMonth)) . '. Use Edit to modify it.';
+                    }
+                }
             }
         }
 
-        if (!empty($errors)) {
-            $result['message'] = implode('<br>', $errors);
+        return [
+            'errors' => $errors,
+            'studentId' => $studentId,
+            'amount' => $amount,
+            'formattedMonth' => $formattedMonth,
+            'status' => $status,
+            'paymentDate' => $paymentDate,
+            'existingCollectibleId' => $existingCollectibleId,
+        ];
+    }
+
+    public function handleAddFee(): array {
+        $result = ['message' => '', 'messageType' => 'success', 'errors' => []];
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || (isset($_POST['action']) && $_POST['action'] !== 'add_fee')) {
+            return $result;
+        }
+
+        $validated = $this->validateFeePayload($_POST);
+        if (!empty($validated['errors'])) {
+            $result['errors'] = $validated['errors'];
+            $result['message'] = implode(' ', $validated['errors']);
+            $result['messageType'] = 'error';
+            return $result;
+        }
+
+        try {
+            if (!empty($validated['existingCollectibleId'])) {
+                $stmt = $this->db->prepare(
+                    'UPDATE fees SET amount = ?, status = ?, payment_date = ? WHERE id = ?'
+                );
+                $stmt->execute([
+                    $validated['amount'],
+                    $validated['status'],
+                    $validated['paymentDate'],
+                    $validated['existingCollectibleId'],
+                ]);
+                $result['message'] = 'Fee collected and existing invoice updated successfully.';
+            } else {
+                $stmt = $this->db->prepare(
+                    'INSERT INTO fees (student_id, amount, month, status, payment_date) VALUES (?, ?, ?, ?, ?)'
+                );
+                $stmt->execute([
+                    $validated['studentId'],
+                    $validated['amount'],
+                    $validated['formattedMonth'],
+                    $validated['status'],
+                    $validated['paymentDate'],
+                ]);
+                $result['message'] = 'Fee record created successfully.';
+            }
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                unset($_SESSION['deleted_fee_months'][$validated['studentId'] . '|' . $validated['formattedMonth']]);
+            }
+            $result['messageType'] = 'success';
+            $_POST = [];
+        } catch (PDOException $e) {
+            $errMsg = 'Unable to save fee: ' . $e->getMessage();
+            $result['message'] = $errMsg;
+            $result['errors'] = [$errMsg];
+            $result['messageType'] = 'error';
+        }
+
+        return $result;
+    }
+
+    /**
+     * Update an existing fee invoice record.
+     */
+    public function handleEditFee(): array {
+        $result = ['message' => '', 'messageType' => 'success', 'errors' => []];
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || ($_POST['action'] ?? '') !== 'edit_fee') {
+            return $result;
+        }
+
+        $feeId = (int) ($_POST['fee_id'] ?? 0);
+        if ($feeId < 1) {
+            $errMsg = 'Invalid fee invoice selected.';
+            return ['message' => $errMsg, 'messageType' => 'error', 'errors' => [$errMsg]];
+        }
+
+        $existsStmt = $this->db->prepare('SELECT id FROM fees WHERE id = ? LIMIT 1');
+        $existsStmt->execute([$feeId]);
+        if (!$existsStmt->fetch()) {
+            $errMsg = 'Fee record not found.';
+            return ['message' => $errMsg, 'messageType' => 'error', 'errors' => [$errMsg]];
+        }
+
+        $validated = $this->validateFeePayload($_POST, $feeId);
+        if (!empty($validated['errors'])) {
+            $result['errors'] = $validated['errors'];
+            $result['message'] = implode(' ', $validated['errors']);
             $result['messageType'] = 'error';
             return $result;
         }
 
         try {
             $stmt = $this->db->prepare(
-                'INSERT INTO fees (student_id, amount, month, status, payment_date) VALUES (?, ?, ?, ?, ?)'
+                'UPDATE fees SET student_id = ?, amount = ?, month = ?, status = ?, payment_date = ? WHERE id = ?'
             );
-            $stmt->execute([$studentId, $amount, $month . '-01', $status, $paymentDate]);
-            $result['message'] = 'Fee record created successfully.';
+            $stmt->execute([
+                $validated['studentId'],
+                $validated['amount'],
+                $validated['formattedMonth'],
+                $validated['status'],
+                $validated['paymentDate'],
+                $feeId,
+            ]);
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                unset($_SESSION['deleted_fee_months'][$validated['studentId'] . '|' . $validated['formattedMonth']]);
+            }
+            $result['message'] = 'Fee record updated successfully.';
             $result['messageType'] = 'success';
             $_POST = [];
         } catch (PDOException $e) {
-            $result['message'] = 'Unable to save fee: ' . $e->getMessage();
+            $errMsg = 'Unable to update fee: ' . $e->getMessage();
+            $result['message'] = $errMsg;
+            $result['errors'] = [$errMsg];
+            $result['messageType'] = 'error';
+        }
+
+        return $result;
+    }
+
+    /**
+     * Delete a fee invoice record.
+     */
+    public function handleDeleteFee(): array {
+        $result = ['message' => '', 'messageType' => 'success'];
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || ($_POST['action'] ?? '') !== 'delete_fee') {
+            return $result;
+        }
+
+        $feeId = (int) ($_POST['fee_id'] ?? 0);
+        if ($feeId < 1) {
+            return ['message' => 'Invalid fee invoice selected.', 'messageType' => 'error'];
+        }
+
+        try {
+            $findStmt = $this->db->prepare('SELECT id, student_id, month FROM fees WHERE id = ? LIMIT 1');
+            $findStmt->execute([$feeId]);
+            $feeRow = $findStmt->fetch();
+
+            if (!$feeRow) {
+                return ['message' => 'Fee record not found.', 'messageType' => 'error'];
+            }
+
+            $delStmt = $this->db->prepare('DELETE FROM fees WHERE id = ?');
+            $delStmt->execute([$feeId]);
+
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                $_SESSION['deleted_fee_months'][(int) $feeRow['student_id'] . '|' . $feeRow['month']] = true;
+            }
+
+            $result['message'] = 'Fee record deleted successfully.';
+            $result['messageType'] = 'success';
+        } catch (PDOException $e) {
+            $result['message'] = 'Unable to delete fee record: ' . $e->getMessage();
             $result['messageType'] = 'error';
         }
 

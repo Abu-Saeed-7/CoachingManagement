@@ -257,6 +257,26 @@
     font-size: 14px;
 }
 
+.form_message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.form_message.success {
+    background-color: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.form_message.error {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
 /* ========================================================
    RESPONSIVE DESIGN (Tablets, Laptops, Mobile)
    ======================================================== */

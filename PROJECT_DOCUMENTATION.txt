@@ -7,8 +7,8 @@ PROJECT INFORMATION
 -------------------
 Project Title : Coaching Management System
 Course        : Database Management Systems
-Group         : Group 07
-Members       : [Student Name - ID], [Student Name - ID], [Student Name - ID]
+Group         : Group 13
+Members       : Zarif Tahmid (ID: 240221), Abu Saeed (ID: 240222)
 Instructor    : [Instructor Name]
 Date          : September 29, 2026
 
